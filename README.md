@@ -1,7 +1,9 @@
 # ska-dsh_lmc
 SKA Dish LMC Control System Prototype
 
-#**Getting Started**  
+##**About**  
+
+##**Installation**  
 ___
 Install the project dependencies:  
 	-omniORB [http://omniorb.sourceforge.net/]  
@@ -12,7 +14,7 @@ Install the project dependencies:
 	-cmake (>=2.8) [https://cmake.org]  
   
 Make sure you have the following environment variable set to your dependency installation dirs and let cmake find the include dirs and libraries:  
-	-TANGO_ROOT  
+	*TANGO_ROOT  
 	-OMNIORB_ROOT  
 	-ZMQ_ROOT  
 	-JSONCPP_ROOT  
