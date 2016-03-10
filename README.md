@@ -1,12 +1,7 @@
-ska-dsh-lmc
+##**About**  
 SKA Dish LMC Control System Prototype
-___
 
-###**About**  
-===
-
-###**Installation**  
-===
+##**Installation**  
 Install the project dependencies:  
 * omniORB [http://omniorb.sourceforge.net/]  
 * zmq [http://zeromq.org/]  
