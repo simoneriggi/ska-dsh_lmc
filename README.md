@@ -1,12 +1,14 @@
-# ska-dsh_lmc
+ska-dsh-lmc
 SKA Dish LMC Control System Prototype
+===================
+- - - - 
 
-##**About**  
+###**About**  
 
-##**Installation**  
+###**Installation**  
 ___
 Install the project dependencies:  
-*	omniORB [http://omniorb.sourceforge.net/]  
+* omniORB [http://omniorb.sourceforge.net/]  
 * zmq [http://zeromq.org/]  
 * Tango Control System [http://www.tango-controls.org/]  
 * jsoncpp  [https://github.com/open-source-parsers/jsoncpp]  
