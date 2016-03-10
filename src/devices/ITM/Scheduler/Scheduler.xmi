@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="ASCII"?>
+<pogoDsl:PogoSystem xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:pogoDsl="http://www.esrf.fr/tango/pogo/PogoDsl">
+  <classes name="Scheduler" pogoRevision="9.1">
+    <description description="Device server providing command scheduling functionalities" title="Scheduler" sourcePath="/home/riggi/Analysis/TANGOProjects/SKA_DSH_LMC/trunk/ITM/Scheduler" language="Cpp" filestogenerate="XMI   file,Code files,Protected Regions" license="GPL" copyright="" hasMandatoryProperty="false" hasConcreteProperty="true" hasAbstractCommand="false" hasAbstractAttribute="false">
+      <inheritances classname="Device_Impl" sourcePath=""/>
+      <inheritances classname="BaseDevice" sourcePath="../../Core/BaseDevice"/>
+      <identification contact="at gmail.com - simone.riggi" author="simone.riggi" emailDomain="gmail.com" classFamily="Calculation" siteSpecific="" platform="Unix Like" bus="Not Applicable" manufacturer="none" reference=""/>
+    </description>
+    <deviceProperties name="max_queueable_tasks" description="Max size of task queue, e.g. maximum number of tasks that &#xA;can be inserted in the task queue">
+      <type xsi:type="pogoDsl:IntType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <DefaultPropValue>100</DefaultPropValue>
+    </deviceProperties>
+    <deviceProperties name="thread_heartbeat_period" description="Polling period used for thread heartbeat  in seconds">
+      <type xsi:type="pogoDsl:UIntType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <DefaultPropValue>1</DefaultPropValue>
+    </deviceProperties>
+    <deviceProperties name="max_trackable_tasks" description="Maximum  number of tasks tracked, e.g. inserted and monitored &#xA;in the task collection.">
+      <type xsi:type="pogoDsl:IntType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <DefaultPropValue>1000</DefaultPropValue>
+    </deviceProperties>
+    <deviceProperties name="max_cacheable_device_proxies" description="Maximum number of cacheable device proxies. &#xA;If the number of cached device proxies exceeds the limit all &#xA;requested command to be scheduled will be refused.">
+      <type xsi:type="pogoDsl:IntType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <DefaultPropValue>10</DefaultPropValue>
+    </deviceProperties>
+    <commands name="State" description="This command gets the device state (stored in its device_state data member) and returns it to the caller." execMethod="dev_state" displayLevel="OPERATOR" polledPeriod="0">
+      <argin description="none">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="Device state">
+        <type xsi:type="pogoDsl:StateType"/>
+      </argout>
+      <status abstract="true" inherited="true" concrete="true"/>
+    </commands>
+    <commands name="Status" description="This command gets the device status (stored in its device_status data member) and returns it to the caller." execMethod="dev_status" displayLevel="OPERATOR" polledPeriod="0">
+      <argin description="none">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="Device status">
+        <type xsi:type="pogoDsl:ConstStringType"/>
+      </argout>
+      <status abstract="true" inherited="true" concrete="true"/>
+    </commands>
+    <commands name="ScheduleTask" description="Schedule a command" execMethod="schedule_task" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="[0]: Request arg &#xA;[1]: Proxy device name to be contacted for request&#xA;[2]: Command name in proxy device (optional)">
+        <type xsi:type="pogoDsl:StringArrayType"/>
+      </argin>
+      <argout description="Long arg&#xA;[0]: ack&#xA;&#xA;String arg&#xA;[0]: err/info description">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="TestSchedule" description="" execMethod="test_schedule" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="">
+        <type xsi:type="pogoDsl:StringType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="FlushTaskQueue" description="Flush the task queue. All tasks in the queue will be removed.&#xA;Idle tasks only will be removed from the task list history." execMethod="flush_task_queue" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="RevokeTask" description="Remove a task with given id from the queue and also from&#xA;the task history list." execMethod="revoke_task" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="Task id">
+        <type xsi:type="pogoDsl:StringType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="GetNQueuedTasks" description="Return the number of tasks actually present in the queue" execMethod="get_nqueued_tasks" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="Long arg&#xA;[0]: ack code &#xA;[1]: current queue size">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="GetNRunningTasks" description="Get number of running tasks" execMethod="get_nrunning_tasks" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="PrintTasks" description="Print tasks present in the list (mainly for debugging purpose)" execMethod="print_tasks" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <pipes name="FinalResponse" description="Task final response data structure" label="FinalResponse" rwType="READ" displayLevel="OPERATOR"/>
+    <pipes name="IntermediateResponse" description="intermediate task response data structure" label="intermediateResponse" rwType="READ" displayLevel="OPERATOR"/>
+    <pipes name="queued_tasks" description="Queued tasks" label="queued_tasks" rwType="READ" displayLevel="OPERATOR"/>
+    <pipes name="tasks" description="Task collection pipe" label="tasks" rwType="READ" displayLevel="OPERATOR"/>
+    <preferences docHome="./doc_html" makefileHome="/home/riggi/Software/TANGO/v9.1.0/share/pogo/preferences"/>
+    <additionalFiles name="TaskCallBack" path="/home/riggi/Analysis/TANGOProjects/SKA_DSH_LMC/trunk/ITM/Scheduler/TaskCallBack.cpp"/>
+    <additionalFiles name="SchedulerThread" path="/home/riggi/Analysis/TANGOProjects/SKA_DSH_LMC/trunk/ITM/Scheduler/SchedulerThread.cpp"/>
+    <additionalFiles name="TaskManager" path="/home/riggi/Analysis/TANGOProjects/SKA_DSH_LMC/trunk/ITM/Scheduler/TaskManager.cpp"/>
+  </classes>
+</pogoDsl:PogoSystem>
