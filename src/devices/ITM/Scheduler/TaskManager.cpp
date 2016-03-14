@@ -1,6 +1,7 @@
 #include <TaskManager.h>
 #include <TaskCallBack.h>
 
+
 #include <tango.h>
 
 //# JSON CPP
@@ -77,8 +78,8 @@ int TaskManager::AddTask(Task& task){
 	//Add task to queue & collection
 	DEBUG_STREAM<<"TaskManager::AddTask(): Adding task: id="<<task.id<<endl;
 	try {	
-		//m_taskQueue.push(task);
 		m_taskQueue.insert(task);
+		m_monitorQueue.insert(task);
 		m_tasks.AddTask(task);
 	}
 	catch(...){
@@ -123,60 +124,62 @@ bool TaskManager::IsEmptyQueue() const {
 void TaskManager::PrintQueueTasks(){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	if(m_taskQueue.empty()) return;
-	//Task topTask= m_taskQueue.top();
 	auto it = m_taskQueue.begin();
 	Task topTask= *it;  
 	topTask.Print();
 }//close PrintQueueTasks()
 
-/*
-TaskPtr TaskManager::PopTask() {
+
+int TaskManager::PopMonitorTask(Task& task) {
     
 	std::unique_lock<std::mutex> mlock(m_mutex);
-	
-	//If queue is empty wait until signalled
-	DEBUG_STREAM << "TaskManager::PopTask(): INFO: Waiting up to signal..."<<endl;
-	m_cond.wait(mlock,[this]{return (!m_taskQueue.empty() || m_wakeUpSignal || m_endSignal);});
-	DEBUG_STREAM << "TaskManager::PopTask(): INFO: Awake..."<<endl;
-  
-	//If end signal is given return nullptr
-	if(m_endSignal || m_taskQueue.empty()){
-		DEBUG_STREAM << "TaskManager::PopTask(): INFO: End signal catched, exiting..."<<endl;
-		return std::shared_ptr<Task>();
-	} 
-	m_wakeUpSignal = false;
-	
-	//## Get task & info
-  //auto item = m_taskQueue.top();
-	//std::shared_ptr<Task> task( std::make_shared<Task>(std::move(m_taskQueue.top())) );
-	std::shared_ptr<Task> task( std::make_shared<Task>(std::move(*m_taskQueue.begin())) );
-	auto task_start= task->startTime;
-	auto task_end= task->endTime;
-	int task_exec_status= task->execStatus;
-	std::string task_id= task->id;
-	std::string task_name= task->name;
-	auto now = std::chrono::system_clock::now();
-	auto tdiff= std::chrono::duration<double,std::milli>(task_start-now);
-	DEBUG_STREAM<<"TaskManager::PopTask(): INFO: Task info: name="<<task_name<<", id="<<task_id<<", tdiff="<<tdiff.count()<<endl;
 
-	if (tdiff.count()<=0 && now<task_end && task_exec_status==eIDLE) {
-		DEBUG_STREAM<<"TaskManager::PopTask(): INFO: Activation time reached, popping task..."<<endl;
-		m_taskQueue.pop();
-		return task;
+	//If queue is empty wait until signalled
+	DEBUG_STREAM << "TaskManager::PopMonitorTask(): INFO: Waiting until signaled..."<<endl;
+	m_cond.wait(mlock,[this]{return (!m_monitorQueue.empty() || m_wakeUpSignal || m_endSignal);});
+	DEBUG_STREAM << "TaskManager::PopMonitorTask(): INFO: Awake..."<<endl;
+  	
+	if(m_endSignal || m_monitorQueue.empty()){
+		DEBUG_STREAM << "TaskManager::PopMonitorTask(): INFO: End signal catched, exiting..."<<endl;
+		return -1;
 	}
 
-	//## If activation time is not reached, wait until task activation or until any signal (wakeup/end)
-	if( m_cond.wait_for(mlock,tdiff, [this](){return (m_wakeUpSignal || m_endSignal);}) ){
-		DEBUG_STREAM<<"TaskManager::PopTask(): INFO: Finished waiting..."<<endl;
+	m_wakeUpSignal = false;
+
+	//## Get task & info
+	auto it= m_monitorQueue.begin();
+	task = *it;
+
+	auto task_start= task.startTime;
+	auto task_end= task.endTime;
+	int task_exec_status= task.execStatus;
+	std::string task_id= task.id;
+	std::string task_name= task.name;
+	auto now = std::chrono::system_clock::now();
+	auto tdiff= std::chrono::duration<double,std::milli>(task_end-now);
+	DEBUG_STREAM<<"TaskManager::PopMonitorTask(): INFO: Task info: name="<<task_name<<", id="<<task_id<<", status="<<task_exec_status<<", tdiff(s)="<<tdiff.count()/1000.<<endl;
+	
+	//## If expiration time is reached, remove task from queue and return the popped task
+	if (tdiff.count()<=0) {
+		DEBUG_STREAM<<"TaskManager::PopMonitorTask(): INFO: Popping task: name="<<task_name<<", id="<<task_id<<", tdiff(s)="<<tdiff.count()/1000.<<endl;
+		m_monitorQueue.erase(it);
+		return 0;	
+	}
+
+	//## If expiration time is not reached, wait until task expiration or until any signal (wakeup/end)
+	if( m_cond.wait_for(mlock,tdiff, [](){return (m_wakeUpSignal || m_endSignal);}) ){
+		DEBUG_STREAM<<"TaskManager::PopMonitorTask(): INFO: Finished waiting (signaled)..."<<endl;
+		if(m_wakeUpSignal) m_wakeUpSignal= false;
 	}
 	else {
-		DEBUG_STREAM<<"TaskManager::PopTask(): INFO: Timeout reached..."<<endl;
+		DEBUG_STREAM<<"TaskManager::PopMonitorTask(): INFO: Finished waiting (Timeout reached)..."<<endl;
 	}
 	
-  return std::shared_ptr<Task>();
+	DEBUG_STREAM << "TaskManager::PopMonitorTask(): INFO: Awake after timeout..."<<endl;
+  
+  return -1;
 
-}//close PopTask()
-*/
+}//close PopMonitorTask()
 
 
 int TaskManager::PopTask(Task& task) {
@@ -245,6 +248,11 @@ int TaskManager::RemoveTask(std::string cmd_id){
 		WARN_STREAM<<"TaskManager::RemoveTask(): ERROR: Failed to remove task from queue (cannot find task or delete failed)!"<<endl;
 		return -1;
 	}
+
+	if(RemoveTaskFromMonitorQueue(cmd_id)<0){
+		WARN_STREAM<<"TaskManager::RemoveTask(): ERROR: Failed to remove task from monitor queue (cannot find task or delete failed)!"<<endl;
+		return -1;
+	}
 	
 	//Remove task from list
 	if(m_tasks.RemoveTask(cmd_id)<0){
@@ -263,6 +271,7 @@ int TaskManager::FlushQueue(){
 	//Erase all tasks in queue
 	try{
 		m_taskQueue.erase(m_taskQueue.begin(),m_taskQueue.end());
+		m_monitorQueue.erase(m_monitorQueue.begin(),m_monitorQueue.end());
 	}
 	catch(...){
 		WARN_STREAM<<"TaskManager::FlushQueue(): ERROR: Failed to remove all tasks from queue!"<<endl;
@@ -278,13 +287,6 @@ int TaskManager::FlushQueue(){
 	return 0;
 
 }//close FlushQueue()
-
-int TaskManager::SetTaskExecStatus(int index,int status,bool check){
-	
-	std::unique_lock<std::mutex> mlock(m_mutex);
-	return m_tasks.SetTaskExecStatus(index,status,check);
-	
-}//close SetTaskExecStatus()
 
 
 TaskPtr TaskManager::FindTaskPtr(int& index,std::string id,std::string name){
@@ -338,12 +340,12 @@ int TaskManager::ExecuteTask(Task& task){
 	catch(Tango::DevFailed& e){
 		Tango::Except::print_exception(e);
 		ERROR_STREAM<<"ERROR: Failed to connect to device "<<device_name<<endl;
-		m_tasks.SetTaskExecStatus(task_index,eABORTED,false);
+		m_tasks.SetTaskStatus(task_index,eCOMPLETED,eABORTED,false);
 		return -1;
 	}
 	catch(std::exception& e){
 		ERROR_STREAM<<"TaskManager::ExecuteTask(): INFO: Run time exception detected ("<<e.what()<<")"<<endl;
-		m_tasks.SetTaskExecStatus(task_index,eABORTED,false);
+		m_tasks.SetTaskStatus(task_index,eCOMPLETED,eABORTED,false);
 		return -1;
 	}
 
@@ -356,19 +358,20 @@ int TaskManager::ExecuteTask(Task& task){
 	catch (Tango::DevFailed &e) { 
 		Tango::Except::print_exception(e); 
 		ERROR_STREAM<<"ERROR: Failed to execute async command to device "<<device_name<<endl;
-		m_tasks.SetTaskExecStatus(task_index,eABORTED,false);
+		m_tasks.SetTaskStatus(task_index,eCOMPLETED,eABORTED,false);
 		return -1;
   }
 
 	//Find task in list and mark as 'RUNNING'	
 	DEBUG_STREAM<<"TaskManager::ExecuteTask(): INFO: Set task as RUNNING ..."<<endl;
-	m_tasks.SetTaskExecStatus(task_index,eRUNNING,false);
+	m_tasks.SetTaskStatus(task_index,eUNKNOWN,eRUNNING,false);
 	
 	DEBUG_STREAM<<"TaskManager::ExecuteTask(): INFO: End task dispatch..."<<endl;
 	
 	return 0;
 
 }//close ExecuteTask()
+
 
 
 int TaskManager::GetTaskPipe(Tango::Pipe& pipe){
@@ -380,6 +383,42 @@ int TaskManager::GetTaskPipe(Tango::Pipe& pipe){
 	}
 	return 0;
 }//close GetTaskPipe()
+
+int TaskManager::SetTaskStatus(int index,int exec_status,int status,bool check){
+	
+	std::unique_lock<std::mutex> mlock(m_mutex);
+	return m_tasks.SetTaskStatus(index,exec_status,status,check);
+	
+}//close SetTaskStatus()
+
+
+int TaskManager::SetTaskStatus(Task& task,int exec_status,int status){
+
+	//Get access to response fields and access to task list
+	int index= -1;
+	std::string cmd_id= task.id;
+	std::string cmd_name= task.name;
+	if( !FindTask(index,cmd_id,cmd_name) ){
+		ERROR_STREAM << "TaskManager::SetTaskStatus(): ERROR: Failed to find task (name="<<cmd_name<<", id="<<cmd_id<<") in list"<<endl;
+		return -1;
+	}
+	
+	//Update cmd status in task list
+	return SetTaskStatus(index,exec_status,status,false);
+	
+}//close SetTaskStatus()
+
+
+int TaskManager::ClearTasks(double historyTimeThr,bool clearRunningTasks){
+
+	//## Clean the task list
+	//## Completed tasks are removed if too old (>historyTimeThr)
+	//## Running tasks are removed if flag clearRunningTasks is true
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	return m_tasks.ClearTasks(historyTimeThr,clearRunningTasks);
+
+}//close CleanTasks()
 
 
 }//close namespace

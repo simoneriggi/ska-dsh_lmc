@@ -4,6 +4,10 @@
 #include <tango.h>
 #include <Scheduler.h>
 
+namespace MessageParser_ns {
+class Response;
+}
+
 namespace Scheduler_ns {
   
 class Scheduler;
@@ -20,6 +24,9 @@ class TaskCallBack : public Tango::CallBack, public Tango::LogAdapter {
 	private:
 		static log4tango::Logger* logger;
 		static Scheduler* device;	
+
+		std::shared_ptr<MessageParser_ns::Response> m_TaskResponse;
+		
 	
 	friend class Scheduler;
 

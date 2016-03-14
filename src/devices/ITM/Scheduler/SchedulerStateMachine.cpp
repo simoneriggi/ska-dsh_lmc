@@ -50,34 +50,66 @@ namespace Scheduler_ns
 //		Attributes Allowed Methods
 //=================================================
 
+//--------------------------------------------------------
+/**
+ *	Method      : Scheduler::is_finalResponse_allowed()
+ *	Description : Execution allowed for finalResponse attribute
+ */
+//--------------------------------------------------------
+bool Scheduler::is_finalResponse_allowed(TANGO_UNUSED(Tango::AttReqType type))
+{
+
+	//	Not any excluded states for finalResponse attribute in read access.
+	/*----- PROTECTED REGION ID(Scheduler::finalResponseStateAllowed_READ) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	Scheduler::finalResponseStateAllowed_READ
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : Scheduler::is_intermediateResponse_allowed()
+ *	Description : Execution allowed for intermediateResponse attribute
+ */
+//--------------------------------------------------------
+bool Scheduler::is_intermediateResponse_allowed(TANGO_UNUSED(Tango::AttReqType type))
+{
+
+	//	Not any excluded states for intermediateResponse attribute in read access.
+	/*----- PROTECTED REGION ID(Scheduler::intermediateResponseStateAllowed_READ) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	Scheduler::intermediateResponseStateAllowed_READ
+	return true;
+}
+
 //=================================================
 //		pipe Allowed Methods
 //=================================================
 //--------------------------------------------------------
 /**
- *	Method      : Scheduler::is_FinalResponse_allowed()
- *	Description : Execution allowed for FinalResponse pipe
+ *	Method      : Scheduler::is_FinalResponsePipe_allowed()
+ *	Description : Execution allowed for FinalResponsePipe pipe
  */
 //--------------------------------------------------------
-bool Scheduler::is_FinalResponse_allowed(TANGO_UNUSED(Tango::PipeReqType type))
+bool Scheduler::is_FinalResponsePipe_allowed(TANGO_UNUSED(Tango::PipeReqType type))
 {
-	//	Not any excluded states for FinalResponse pipe in read access.
-	/*----- PROTECTED REGION ID(Scheduler::FinalResponseStateAllowed_READ) ENABLED START -----*/
+	//	Not any excluded states for FinalResponsePipe pipe in read access.
+	/*----- PROTECTED REGION ID(Scheduler::FinalResponsePipeStateAllowed_READ) ENABLED START -----*/
 	return true;
-	/*----- PROTECTED REGION END -----*/	//	Scheduler::FinalResponseStateAllowed_READ
+	/*----- PROTECTED REGION END -----*/	//	Scheduler::FinalResponsePipeStateAllowed_READ
 }
 //--------------------------------------------------------
 /**
- *	Method      : Scheduler::is_IntermediateResponse_allowed()
- *	Description : Execution allowed for IntermediateResponse pipe
+ *	Method      : Scheduler::is_IntermediateResponsePipe_allowed()
+ *	Description : Execution allowed for IntermediateResponsePipe pipe
  */
 //--------------------------------------------------------
-bool Scheduler::is_IntermediateResponse_allowed(TANGO_UNUSED(Tango::PipeReqType type))
+bool Scheduler::is_IntermediateResponsePipe_allowed(TANGO_UNUSED(Tango::PipeReqType type))
 {
-	//	Not any excluded states for IntermediateResponse pipe in read access.
-	/*----- PROTECTED REGION ID(Scheduler::IntermediateResponseStateAllowed_READ) ENABLED START -----*/
-	
-	/*----- PROTECTED REGION END -----*/	//	Scheduler::IntermediateResponseStateAllowed_READ
+	//	Not any excluded states for IntermediateResponsePipe pipe in read access.
+	/*----- PROTECTED REGION ID(Scheduler::IntermediateResponsePipeStateAllowed_READ) ENABLED START -----*/
+	return true;
+	/*----- PROTECTED REGION END -----*/	//	Scheduler::IntermediateResponsePipeStateAllowed_READ
 }
 //--------------------------------------------------------
 /**
@@ -89,7 +121,7 @@ bool Scheduler::is_queued_tasks_allowed(TANGO_UNUSED(Tango::PipeReqType type))
 {
 	//	Not any excluded states for queued_tasks pipe in read access.
 	/*----- PROTECTED REGION ID(Scheduler::queued_tasksStateAllowed_READ) ENABLED START -----*/
-	
+	return true;
 	/*----- PROTECTED REGION END -----*/	//	Scheduler::queued_tasksStateAllowed_READ
 }
 //--------------------------------------------------------
@@ -104,6 +136,19 @@ bool Scheduler::is_tasks_allowed(TANGO_UNUSED(Tango::PipeReqType type))
 	/*----- PROTECTED REGION ID(Scheduler::tasksStateAllowed_READ) ENABLED START -----*/
 	return true;
 	/*----- PROTECTED REGION END -----*/	//	Scheduler::tasksStateAllowed_READ
+}
+//--------------------------------------------------------
+/**
+ *	Method      : Scheduler::is_myPipe_allowed()
+ *	Description : Execution allowed for myPipe pipe
+ */
+//--------------------------------------------------------
+bool Scheduler::is_myPipe_allowed(TANGO_UNUSED(Tango::PipeReqType type))
+{
+	//	Not any excluded states for myPipe pipe in read access.
+	/*----- PROTECTED REGION ID(Scheduler::myPipeStateAllowed_READ) ENABLED START -----*/
+	return true;
+	/*----- PROTECTED REGION END -----*/	//	Scheduler::myPipeStateAllowed_READ
 }
 
 //=================================================
@@ -212,6 +257,21 @@ bool Scheduler::is_PrintTasks_allowed(TANGO_UNUSED(const CORBA::Any &any))
 	/*----- PROTECTED REGION ID(Scheduler::PrintTasksStateAllowed) ENABLED START -----*/
 	
 	/*----- PROTECTED REGION END -----*/	//	Scheduler::PrintTasksStateAllowed
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : Scheduler::is_ClearTasks_allowed()
+ *	Description : Execution allowed for ClearTasks attribute
+ */
+//--------------------------------------------------------
+bool Scheduler::is_ClearTasks_allowed(TANGO_UNUSED(const CORBA::Any &any))
+{
+	//	Not any excluded states for ClearTasks command.
+	/*----- PROTECTED REGION ID(Scheduler::ClearTasksStateAllowed) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	Scheduler::ClearTasksStateAllowed
 	return true;
 }
 

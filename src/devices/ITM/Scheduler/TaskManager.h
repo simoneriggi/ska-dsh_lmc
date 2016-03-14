@@ -2,6 +2,8 @@
 #define TaskManager_H
 
 #include <Scheduler.h>
+#include <CodeUtils.h>
+
 #include <tango.h>
 
 
@@ -13,6 +15,11 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+
+
+namespace Utils_ns {
+	class CodeUtils;
+}
 
 
 namespace Scheduler_ns {
@@ -30,7 +37,8 @@ enum TaskStatus {
 	eUNKNOWN= 0,
 	eSUCCESS= 1,
 	eFAILED= 2,
-	eABORTED= 3
+	eABORTED= 3,
+	eEXPIRED= 4
 };
 
 typedef std::chrono::system_clock::time_point Timestamp;
@@ -213,10 +221,14 @@ class Task {
 };//close class
 
 typedef std::shared_ptr<Task> TaskPtr;
-struct CompareTask {
+struct CompareTaskByActivationTime {
 	bool operator()( const Task& t1, const Task& t2 ) const {
-  	//return t1.startTime > t2.startTime;
-		return t1.startTime < t2.startTime;
+  	return t1.startTime < t2.startTime;
+  }
+};
+struct CompareTaskByExpirationTime {
+	bool operator()( const Task& t1, const Task& t2 ) const {
+  	return t1.endTime < t2.endTime;
   }
 };
 
@@ -265,6 +277,21 @@ struct MatchExecStatus {
   	const int& m_exec_status;
 };
 
+struct MatchOldTask {
+	MatchOldTask(const int& filter_exec_status,const Timestamp& current_time,const double& historyTimeThr) 
+		: m_filter_exec_status(filter_exec_status), m_currentTime(current_time), m_historyTimeThr(historyTimeThr) 
+	{}
+ 	bool operator()(const Task& obj) const {
+		double tdiff= std::chrono::duration<double,std::milli>(m_currentTime-obj.startTime).count()*1.e-3;
+		bool isOld= (tdiff>=m_historyTimeThr) && (m_filter_exec_status==-1 || obj.execStatus!=m_filter_exec_status);
+  	return isOld;
+ 	}
+ 	private:
+  	const int& m_filter_exec_status;
+		const Timestamp& m_currentTime;
+		const double& m_historyTimeThr;
+};
+
 struct MatchPtrExecStatus {
 	MatchPtrExecStatus(const int& exec_status) : m_exec_status(exec_status) {}
  	bool operator()(const TaskPtr obj) const {
@@ -275,8 +302,8 @@ struct MatchPtrExecStatus {
 };
 
 
-//typedef std::priority_queue<Task, std::vector<Task>, CompareTask> TaskQueue;
-typedef std::set<Task,CompareTask> TaskQueue;
+typedef std::set<Task,CompareTaskByActivationTime> TaskQueue;
+typedef std::set<Task,CompareTaskByExpirationTime> TaskMonitorQueue;
 typedef std::vector<Task> Tasks;
 
 
@@ -401,6 +428,15 @@ class TaskCollection {
 			return 0;
 		}
 
+		int SetTaskStatus(int index,int exec_status,int status,bool check=true){
+			if(check && !GetTask(index)){
+				return -1;
+			}
+			m_tasks[index].execStatus= exec_status;
+			m_tasks[index].status= status;
+			return 0;
+		}
+
 		Task* FindTopTask(int& index){
 			int nTasks= GetN();
 			if(nTasks<=0) return 0;
@@ -470,11 +506,25 @@ class TaskCollection {
 			}
 			return 0;
 		}//close GetPipeBlob()
-		
+
+
+		int ClearTasks(double historyTimeThr,bool clearRunningTasks){
+			if(m_tasks.empty()) return 0;
+			auto now = std::chrono::system_clock::now();
+			try {
+				if(clearRunningTasks) m_tasks.erase( std::remove_if(m_tasks.begin(), m_tasks.end(), MatchOldTask(-1,now,historyTimeThr) ), m_tasks.end() );
+				else m_tasks.erase( std::remove_if(m_tasks.begin(), m_tasks.end(), MatchOldTask(eRUNNING,now,historyTimeThr) ), m_tasks.end() );
+			}
+			catch(...){
+				cerr<<"TaskCollection::ClearTasks(): ERROR: Exception while deleting task from container!"<<endl;
+				return -1;
+			}
+			return 0;
+		}//close ClearTasks()
+	
 	private:
 		Tasks m_tasks;
-		//TaskPtrs m_tasks;		
-
+		
 };//close class TaskCollection
 
 
@@ -499,9 +549,9 @@ class TaskManager : public Tango::LogAdapter {
  		*/
 		int PopTask(Task&);
 		/** 
-		\brief Pop task from queue
+		\brief Pop task from monitor queue
  		*/
-		//TaskPtr PopTask();
+		int PopMonitorTask(Task&);
 
 		/** 
 		\brief Find task 
@@ -514,7 +564,16 @@ class TaskManager : public Tango::LogAdapter {
 		/** 
 		\brief Set task exec status
  		*/
-		int SetTaskExecStatus(int index,int status,bool check=true);
+		int SetTaskStatus(int index,int exec_status,int status,bool check=true);
+		/** 
+		\brief Set task exec status
+ 		*/
+		int SetTaskStatus(Task& task,int exec_status,int status);
+
+		/** 
+		\brief Clear task list (remove old tasks)
+ 		*/
+		int ClearTasks(double historyTimeThr,bool clearRunningTasks);
 
 	 	/** 
 		\brief Wake up signal
@@ -534,6 +593,13 @@ class TaskManager : public Tango::LogAdapter {
 		int GetNTasksInQueue(){
 			std::unique_lock<std::mutex> mlock(m_mutex);
 			return static_cast<int>(m_taskQueue.size());
+		}
+		/** 
+		\brief Get number of tasks in monitor queue
+ 		*/
+		int GetNTasksInMonitorQueue(){
+			std::unique_lock<std::mutex> mlock(m_mutex);
+			return static_cast<int>(m_monitorQueue.size());
 		}
 
 		/** 
@@ -668,7 +734,7 @@ class TaskManager : public Tango::LogAdapter {
 		\brief Remove task from queue
  		*/
 		int RemoveTaskFromQueue(std::string cmd_id){
-			if(m_taskQueue.empty()) return 0;		
+			if(m_taskQueue.empty() ) return 0;		
 			std::set<Task>::iterator it= std::find_if(m_taskQueue.begin(),m_taskQueue.end(),MatchTaskById(cmd_id));
 			if(it==m_taskQueue.end()) return -1;			
 			try {
@@ -680,6 +746,25 @@ class TaskManager : public Tango::LogAdapter {
 			}
 			return 0;
 		}
+
+		/** 
+		\brief Remove task from monitor queue
+ 		*/
+		int RemoveTaskFromMonitorQueue(std::string cmd_id){
+			if(m_monitorQueue.empty() ) return 0;		
+			std::set<Task>::iterator it= std::find_if(m_monitorQueue.begin(),m_monitorQueue.end(),MatchTaskById(cmd_id));
+			if(it==m_monitorQueue.end()) return -1;			
+			try {
+				m_monitorQueue.erase(it);
+			}
+			catch(...){
+				WARN_STREAM<<"TaskManager::RemoveTaskFromMonitorQueue(): ERROR: Exception while deleting task from queue!"<<endl;
+				return -1;
+			}
+			return 0;
+		}
+
+		
 
 	private:		
 		//Thread mutex variables
@@ -698,6 +783,7 @@ class TaskManager : public Tango::LogAdapter {
 		//Queue & task tracker vars
 		TaskCollection m_tasks;
 		TaskQueue m_taskQueue;
+		TaskMonitorQueue m_monitorQueue;
 		
 		//Options
 		int m_maxTasksInQueue;

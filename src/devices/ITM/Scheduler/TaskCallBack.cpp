@@ -38,6 +38,7 @@ TaskCallBack::TaskCallBack (Scheduler* dev) : Tango::LogAdapter(dev){
    
 	device = dev;
 	logger= Tango::LogAdapter(dev).get_logger();
+	m_TaskResponse= std::make_shared<MessageParser_ns::Response>();
 
 }//close constructor
 	
@@ -115,15 +116,14 @@ void TaskCallBack::cmd_ended(Tango::CmdDoneEvent* event){
 
 	
 	//Parse argout data to Response
-	MessageParser_ns::Response res;
-	if(res.Parse(cmd_argout)<0){
+	if(m_TaskResponse->Parse(cmd_argout)<0){
 		ERROR_STREAM<<"TaskCallBack::cmd_ended(): ERROR: Failed to parse argout data to Response (malformed response?)!"<<endl;
 		return;
 	}
 
 	//Get access to response fields and access to task list
 	int index= -1;
-	std::string cmd_id= res.GetId();
+	std::string cmd_id= m_TaskResponse->GetId();
 	if(!((device->m_TaskManager)->FindTask(index,cmd_id,cmd_name)) ){
 		ERROR_STREAM << "TaskCallBack::cmd_ended(): ERROR: Failed to find task (name="<<cmd_name<<", id="<<cmd_id<<") in list"<<endl;
 		return;
@@ -131,33 +131,35 @@ void TaskCallBack::cmd_ended(Tango::CmdDoneEvent* event){
 	
 	//Update cmd status in task list
 	if(event->err){
-		(device->m_TaskManager)->SetTaskExecStatus(index,eFAILED,false);
+		(device->m_TaskManager)->SetTaskStatus(index,eCOMPLETED,eFAILED,false);
 	}
 	else {
-		(device->m_TaskManager)->SetTaskExecStatus(index,eSUCCESS,false);
+		(device->m_TaskManager)->SetTaskStatus(index,eCOMPLETED,eSUCCESS,false);
 	}
 
-	// Set a response pipe
+	// Set a response pipe and push event
+	(device->m_mutex)->lock();
+	*(device->attr_finalResponse_read)= CORBA::string_dup(cmd_argout.c_str());
+	device->push_change_event ("FinalResponse", device->attr_finalResponse_read);
+	(device->m_mutex)->unlock();
+	
+
+
+	
+	// Set a response pipe and push event
 	(device->m_mutex)->lock();
 	try {	
-		Tango::Pipe& pipe= device->get_device_class()->get_pipe_by_name("FinalResponse");//guess this will throw a Tango exception if pipe does not exist on device
-		/*
-		if(res.GetPipe(pipe)<0){
+		INFO_STREAM<<"TaskCallBack::cmd_ended(): INFO: Encoding response msg to pipe..."<<endl;
+		if(m_TaskResponse->GetPipeBlob((device->m_FinalResponsePipeBlob))<0){
 			throw std::runtime_error("Failed to encode response message to Tango pipe");
 		}	
-		pipe.set_root_blob_name("FinalResponse");
-		*/
 	
-		std::string pipe_name= "FinalResponse";
-		pipe.set_name(pipe_name);
-		pipe.set_root_blob_name("FinalResponse");
-		std::vector<std::string> de_names {"x","y"};
-		pipe.set_data_elt_names(de_names);
-
-		double x= 4.5;
-		double y= 6.7;
-		pipe << x << y;
-		INFO_STREAM<<"TaskCallBack::cmd_ended(): INFO: after pipe set"<<endl;
+		INFO_STREAM<<"TaskCallBack::cmd_ended(): INFO: Setting device pipe from blob..."<<endl;
+		(device->m_FinalResponsePipeBlob).set_name("FinalResponsePipeBlob");
+		INFO_STREAM<<"TaskCallBack::cmd_ended(): INFO: after pipe blob set"<<endl;
+			
+		//Push event pipe
+		device->push_pipe_event	("FinalResponsePipe",&(device->m_FinalResponsePipeBlob),true);
 	
 	}
 	catch(Tango::DevFailed& e){
@@ -170,10 +172,89 @@ void TaskCallBack::cmd_ended(Tango::CmdDoneEvent* event){
 	catch(...){
 		ERROR_STREAM << "TaskCallBack::cmd_ended(): ERROR: Unknown exception occurred while setting pipe!"<<endl;	
 	}
+
+	
 	(device->m_mutex)->unlock();
 	
-	//Push response pipe event
-	//...
+
+
+
+	/*
+	// Set a dummy pipe
+	(device->m_mutex)->lock();
+	try {	
+		INFO_STREAM<<"TaskCallBack::cmd_ended(): INFO: Retrieve pipe from device class..."<<endl;
+		Tango::Pipe& pipe= device->get_device_class()->get_pipe_by_name("myPipe");//guess this will throw a Tango exception if pipe does not exist on device
+		
+		INFO_STREAM<<"TaskCallBack::cmd_ended(): INFO: Setting device pipe from blob..."<<endl;
+	
+		pipe.set_root_blob_name("myPipe");
+		std::vector<std::string> de_names {"x","y"};
+		pipe.set_data_elt_names(de_names);
+
+		device->x= 4.5;
+		device->y= 6.7;
+		pipe << device->x << device->y;
+		INFO_STREAM<<"TaskCallBack::cmd_ended(): INFO: after pipe set"<<endl;
+	}
+	catch(Tango::DevFailed& e){
+		Tango::Except::print_exception(e);
+		ERROR_STREAM << "TaskCallBack::cmd_ended(): ERROR: Tango exception occurred while setting pipe!"<<endl;	
+	}
+	catch(std::exception &e){
+		ERROR_STREAM << "TaskCallBack::cmd_ended(): ERROR: Run time exception occurred (e="<<e.what()<<") while setting pipe!"<<endl;	
+	}
+	catch(...){
+		ERROR_STREAM << "TaskCallBack::cmd_ended(): ERROR: Unknown exception occurred while setting pipe!"<<endl;	
+	}
+	(device->m_mutex)->unlock();
+	*/
+
+
+	
+	/*
+	// Set a dummy pipe
+	(device->m_mutex)->lock();
+	try {	
+		INFO_STREAM<<"TaskCallBack::cmd_ended(): INFO: Retrieve pipe from device class..."<<endl;
+		//Tango::Pipe& pipe= device->get_device_class()->get_pipe_by_name("myPipe");//guess this will throw a Tango exception if pipe does not exist on device
+		
+		INFO_STREAM<<"TaskCallBack::cmd_ended(): INFO: Setting device pipe from blob..."<<endl;
+	
+		//Set blob
+		(device->myPipeBlob).set_name("myPipeBlob");
+		std::vector<std::string> de_names {"x","y"};
+		(device->myPipeBlob).set_data_elt_names(de_names);
+
+		device->x= 4.5;
+		device->y= 6.7;
+		(device->myPipeBlob) << device->x << device->y;
+		INFO_STREAM<<"TaskCallBack::cmd_ended(): INFO: after pipe blob set"<<endl;
+
+		//Set pipe
+		//pipe.set_root_blob_name("myPipe");
+		//std::vector<std::string> blob_names {"myPipeBlob"};
+		//pipe.set_data_elt_names(blob_names);
+		//pipe << device->myPipeBlob;
+		//INFO_STREAM<<"TaskCallBack::cmd_ended(): INFO: after pipe set"<<endl;
+	}
+	catch(Tango::DevFailed& e){
+		Tango::Except::print_exception(e);
+		ERROR_STREAM << "TaskCallBack::cmd_ended(): ERROR: Tango exception occurred while setting pipe!"<<endl;	
+	}
+	catch(std::exception &e){
+		ERROR_STREAM << "TaskCallBack::cmd_ended(): ERROR: Run time exception occurred (e="<<e.what()<<") while setting pipe!"<<endl;	
+	}
+	catch(...){
+		ERROR_STREAM << "TaskCallBack::cmd_ended(): ERROR: Unknown exception occurred while setting pipe!"<<endl;	
+	}
+
+	//Push pipe event
+	device->push_pipe_event	("myPipe",&(device->myPipeBlob),true);
+
+	(device->m_mutex)->unlock();
+	*/
+		
 
 }//close cmd_ended()
 

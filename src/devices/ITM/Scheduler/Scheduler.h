@@ -40,10 +40,8 @@
 
 #include <tango.h>
 #include <BaseDevice.h>
-//#include <DispatcherThread.h>
 #include <SchedulerThread.h>
 #include <TaskCallBack.h>
-//#include <Task.h>
 #include <TaskManager.h>
 
 
@@ -59,7 +57,6 @@ namespace Scheduler_ns
 /*----- PROTECTED REGION ID(Scheduler::Additional Class Declarations) ENABLED START -----*/
 
 //	Additional Class Declarations
-	//class DispatcherThread;
 	class SchedulerThread;
 	class TaskCallBack;
 	class TaskManager;
@@ -90,7 +87,17 @@ public:
 	//  If the number of cached device proxies exceeds the limit all 
 	//  requested command to be scheduled will be refused.
 	Tango::DevLong	max_cacheable_device_proxies;
+	//	max_task_timeout:	Maximum duration in seconds allowed for tasks in the queue.
+	//  Tasks without an expiration time given will be assigned an 
+	//  expiration time = start + timeout.
+	Tango::DevLong	max_task_timeout;
+	//	task_history_time_depth:	Max time interval (in seconds) used to maintain tasks in the task list.
+	Tango::DevLong	task_history_time_depth;
 
+//	Attribute data members
+public:
+	Tango::DevString	*attr_finalResponse_read;
+	Tango::DevString	*attr_intermediateResponse_read;
 
 //	Constructors and destructors
 public:
@@ -152,6 +159,25 @@ public:
 	//--------------------------------------------------------
 	virtual void read_attr_hardware(vector<long> &attr_list);
 
+/**
+ *	Attribute finalResponse related methods
+ *	Description: 
+ *
+ *	Data type:	Tango::DevString
+ *	Attr type:	Scalar
+ */
+	virtual void read_finalResponse(Tango::Attribute &attr);
+	virtual bool is_finalResponse_allowed(Tango::AttReqType type);
+/**
+ *	Attribute intermediateResponse related methods
+ *	Description: 
+ *
+ *	Data type:	Tango::DevString
+ *	Attr type:	Scalar
+ */
+	virtual void read_intermediateResponse(Tango::Attribute &attr);
+	virtual bool is_intermediateResponse_allowed(Tango::AttReqType type);
+
 
 	//--------------------------------------------------------
 	/**
@@ -165,18 +191,21 @@ public:
 
 //	pipe related methods
 public:
-	//	Pipe FinalResponse
-	bool is_FinalResponse_allowed(Tango::PipeReqType);
-	void read_FinalResponse(Tango::Pipe &);
-	//	Pipe IntermediateResponse
-	bool is_IntermediateResponse_allowed(Tango::PipeReqType);
-	void read_IntermediateResponse(Tango::Pipe &);
+	//	Pipe FinalResponsePipe
+	bool is_FinalResponsePipe_allowed(Tango::PipeReqType);
+	void read_FinalResponsePipe(Tango::Pipe &);
+	//	Pipe IntermediateResponsePipe
+	bool is_IntermediateResponsePipe_allowed(Tango::PipeReqType);
+	void read_IntermediateResponsePipe(Tango::Pipe &);
 	//	Pipe queued_tasks
 	bool is_queued_tasks_allowed(Tango::PipeReqType);
 	void read_queued_tasks(Tango::Pipe &);
 	//	Pipe tasks
 	bool is_tasks_allowed(Tango::PipeReqType);
 	void read_tasks(Tango::Pipe &);
+	//	Pipe myPipe
+	bool is_myPipe_allowed(Tango::PipeReqType);
+	void read_myPipe(Tango::Pipe &);
 
 //	Command related methods
 public:
@@ -248,6 +277,13 @@ public:
 	 */
 	virtual void print_tasks();
 	virtual bool is_PrintTasks_allowed(const CORBA::Any &any);
+	/**
+	 *	Command ClearTasks related method
+	 *	Description: Clear task list
+	 *
+	 */
+	virtual void clear_tasks();
+	virtual bool is_ClearTasks_allowed(const CORBA::Any &any);
 
 
 	//--------------------------------------------------------
@@ -262,26 +298,26 @@ public:
 
 //	Additional Method prototypes
 	protected:
-		void InitDispatcher();
-		//int CreateAndPushFinalRespPipe();
-		Tango::DevicePipe SetTaskPipe(Task& task);
-
+		void Init();
+		
 		template<typename T>
 			int Schedule(std::string cmd_id,std::string cmd_name,std::string tstart,T cmd_argin, std::string tend= "",std::string cmd_device="");
 			
-		int Schedule(std::string cmd_id,std::string cmd_name,std::string tstart,std::string tend= "",std::string cmd_device=""){};
-
 	protected:
 		SchedulerThread* m_SchedulerThread;
-		TaskManagerThread* m_TaskManagerThread;
-    bool m_StopThreadFlag;
+		bool m_StopThreadFlag;
 	
 		omni_mutex* m_mutex;
 		TaskCallBack* m_TaskCallBack;
 		TaskManager* m_TaskManager;
 
+		double x;
+		double y;
+		Tango::DevicePipeBlob myPipeBlob;
+		Tango::DevicePipeBlob m_FinalResponsePipeBlob;
+
 	friend class SchedulerThread;
-	friend class TaskManagerThread;
+	friend class MonitorThread;
 	friend class TaskCallBack;	
 	friend class TaskManager;	
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ASCII"?>
 <pogoDsl:PogoSystem xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:pogoDsl="http://www.esrf.fr/tango/pogo/PogoDsl">
   <classes name="Scheduler" pogoRevision="9.1">
-    <description description="Device server providing command scheduling functionalities" title="Scheduler" sourcePath="/home/riggi/Analysis/TANGOProjects/SKA_DSH_LMC/trunk/ITM/Scheduler" language="Cpp" filestogenerate="XMI   file,Code files,Protected Regions" license="GPL" copyright="" hasMandatoryProperty="false" hasConcreteProperty="true" hasAbstractCommand="false" hasAbstractAttribute="false">
+    <description description="Device server providing command scheduling functionalities" title="Scheduler" sourcePath="/home/riggi/Analysis/SKAProjects/ska-dsh_lmc/src/devices/ITM/Scheduler" language="Cpp" filestogenerate="XMI   file,Code files,Protected Regions" license="GPL" copyright="" hasMandatoryProperty="false" hasConcreteProperty="true" hasAbstractCommand="false" hasAbstractAttribute="false">
       <inheritances classname="Device_Impl" sourcePath=""/>
       <inheritances classname="BaseDevice" sourcePath="../../Core/BaseDevice"/>
       <identification contact="at gmail.com - simone.riggi" author="simone.riggi" emailDomain="gmail.com" classFamily="Calculation" siteSpecific="" platform="Unix Like" bus="Not Applicable" manufacturer="none" reference=""/>
@@ -25,6 +25,16 @@
       <type xsi:type="pogoDsl:IntType"/>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
       <DefaultPropValue>10</DefaultPropValue>
+    </deviceProperties>
+    <deviceProperties name="max_task_timeout" description="Maximum duration in seconds allowed for tasks in the queue.&#xA;Tasks without an expiration time given will be assigned an &#xA;expiration time = start + timeout.">
+      <type xsi:type="pogoDsl:IntType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <DefaultPropValue>60</DefaultPropValue>
+    </deviceProperties>
+    <deviceProperties name="task_history_time_depth" description="Max time interval (in seconds) used to maintain tasks in the task list.">
+      <type xsi:type="pogoDsl:IntType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <DefaultPropValue>3600</DefaultPropValue>
     </deviceProperties>
     <commands name="State" description="This command gets the device state (stored in its device_state data member) and returns it to the caller." execMethod="dev_state" displayLevel="OPERATOR" polledPeriod="0">
       <argin description="none">
@@ -107,10 +117,36 @@
       </argout>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
     </commands>
-    <pipes name="FinalResponse" description="Task final response data structure" label="FinalResponse" rwType="READ" displayLevel="OPERATOR"/>
-    <pipes name="IntermediateResponse" description="intermediate task response data structure" label="intermediateResponse" rwType="READ" displayLevel="OPERATOR"/>
+    <commands name="ClearTasks" description="Clear task list" execMethod="clear_tasks" displayLevel="OPERATOR" polledPeriod="10000" isDynamic="false">
+      <argin description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <attributes name="finalResponse" attType="Scalar" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:StringType"/>
+      <changeEvent fire="true" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="" label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <attributes name="intermediateResponse" attType="Scalar" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:StringType"/>
+      <changeEvent fire="true" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="" label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <pipes name="FinalResponsePipe" description="Task final response data structure" label="FinalResponse" rwType="READ" displayLevel="OPERATOR"/>
+    <pipes name="IntermediateResponsePipe" description="intermediate task response data structure" label="intermediateResponse" rwType="READ" displayLevel="OPERATOR"/>
     <pipes name="queued_tasks" description="Queued tasks" label="queued_tasks" rwType="READ" displayLevel="OPERATOR"/>
     <pipes name="tasks" description="Task collection pipe" label="tasks" rwType="READ" displayLevel="OPERATOR"/>
+    <pipes name="myPipe" description="" label="myPipe" rwType="READ" displayLevel="OPERATOR"/>
     <preferences docHome="./doc_html" makefileHome="/home/riggi/Software/TANGO/v9.1.0/share/pogo/preferences"/>
     <additionalFiles name="TaskCallBack" path="/home/riggi/Analysis/TANGOProjects/SKA_DSH_LMC/trunk/ITM/Scheduler/TaskCallBack.cpp"/>
     <additionalFiles name="SchedulerThread" path="/home/riggi/Analysis/TANGOProjects/SKA_DSH_LMC/trunk/ITM/Scheduler/SchedulerThread.cpp"/>

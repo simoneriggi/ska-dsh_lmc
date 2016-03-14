@@ -58,36 +58,66 @@ namespace Scheduler_ns
 /*----- PROTECTED REGION END -----*/	//	SchedulerClass::classes for dynamic creation
 
 //=========================================
-//	Define classes for pipes
+//	Define classes for attributes
 //=========================================
-//	Pipe FinalResponse class definition
-class FinalResponseClass: public Tango::Pipe
+//	Attribute finalResponse class definition
+class finalResponseAttrib: public Tango::Attr
 {
 public:
-	FinalResponseClass(const string &name, Tango::DispLevel level)
-		:Pipe(name, level) {};
-
-	~FinalResponseClass() {};
-
-	virtual bool is_allowed (Tango::DeviceImpl *dev,Tango::PipeReqType _prt)
-		{return (static_cast<Scheduler *>(dev))->is_FinalResponse_allowed(_prt);}
-	virtual void read(Tango::DeviceImpl *dev)
-		{(static_cast<Scheduler *>(dev))->read_FinalResponse(*this);}
+	finalResponseAttrib():Attr("finalResponse",
+			Tango::DEV_STRING, Tango::READ) {};
+	~finalResponseAttrib() {};
+	virtual void read(Tango::DeviceImpl *dev,Tango::Attribute &att)
+		{(static_cast<Scheduler *>(dev))->read_finalResponse(att);}
+	virtual bool is_allowed(Tango::DeviceImpl *dev,Tango::AttReqType ty)
+		{return (static_cast<Scheduler *>(dev))->is_finalResponse_allowed(ty);}
 };
 
-//	Pipe IntermediateResponse class definition
-class IntermediateResponseClass: public Tango::Pipe
+//	Attribute intermediateResponse class definition
+class intermediateResponseAttrib: public Tango::Attr
 {
 public:
-	IntermediateResponseClass(const string &name, Tango::DispLevel level)
+	intermediateResponseAttrib():Attr("intermediateResponse",
+			Tango::DEV_STRING, Tango::READ) {};
+	~intermediateResponseAttrib() {};
+	virtual void read(Tango::DeviceImpl *dev,Tango::Attribute &att)
+		{(static_cast<Scheduler *>(dev))->read_intermediateResponse(att);}
+	virtual bool is_allowed(Tango::DeviceImpl *dev,Tango::AttReqType ty)
+		{return (static_cast<Scheduler *>(dev))->is_intermediateResponse_allowed(ty);}
+};
+
+
+//=========================================
+//	Define classes for pipes
+//=========================================
+//	Pipe FinalResponsePipe class definition
+class FinalResponsePipeClass: public Tango::Pipe
+{
+public:
+	FinalResponsePipeClass(const string &name, Tango::DispLevel level)
 		:Pipe(name, level) {};
 
-	~IntermediateResponseClass() {};
+	~FinalResponsePipeClass() {};
 
 	virtual bool is_allowed (Tango::DeviceImpl *dev,Tango::PipeReqType _prt)
-		{return (static_cast<Scheduler *>(dev))->is_IntermediateResponse_allowed(_prt);}
+		{return (static_cast<Scheduler *>(dev))->is_FinalResponsePipe_allowed(_prt);}
 	virtual void read(Tango::DeviceImpl *dev)
-		{(static_cast<Scheduler *>(dev))->read_IntermediateResponse(*this);}
+		{(static_cast<Scheduler *>(dev))->read_FinalResponsePipe(*this);}
+};
+
+//	Pipe IntermediateResponsePipe class definition
+class IntermediateResponsePipeClass: public Tango::Pipe
+{
+public:
+	IntermediateResponsePipeClass(const string &name, Tango::DispLevel level)
+		:Pipe(name, level) {};
+
+	~IntermediateResponsePipeClass() {};
+
+	virtual bool is_allowed (Tango::DeviceImpl *dev,Tango::PipeReqType _prt)
+		{return (static_cast<Scheduler *>(dev))->is_IntermediateResponsePipe_allowed(_prt);}
+	virtual void read(Tango::DeviceImpl *dev)
+		{(static_cast<Scheduler *>(dev))->read_IntermediateResponsePipe(*this);}
 };
 
 //	Pipe queued_tasks class definition
@@ -118,6 +148,21 @@ public:
 		{return (static_cast<Scheduler *>(dev))->is_tasks_allowed(_prt);}
 	virtual void read(Tango::DeviceImpl *dev)
 		{(static_cast<Scheduler *>(dev))->read_tasks(*this);}
+};
+
+//	Pipe myPipe class definition
+class myPipeClass: public Tango::Pipe
+{
+public:
+	myPipeClass(const string &name, Tango::DispLevel level)
+		:Pipe(name, level) {};
+
+	~myPipeClass() {};
+
+	virtual bool is_allowed (Tango::DeviceImpl *dev,Tango::PipeReqType _prt)
+		{return (static_cast<Scheduler *>(dev))->is_myPipe_allowed(_prt);}
+	virtual void read(Tango::DeviceImpl *dev)
+		{(static_cast<Scheduler *>(dev))->read_myPipe(*this);}
 };
 
 
@@ -283,6 +328,29 @@ public:
 	virtual CORBA::Any *execute (Tango::DeviceImpl *dev, const CORBA::Any &any);
 	virtual bool is_allowed (Tango::DeviceImpl *dev, const CORBA::Any &any)
 	{return (static_cast<Scheduler *>(dev))->is_PrintTasks_allowed(any);}
+};
+
+//	Command ClearTasks class definition
+class ClearTasksClass : public Tango::Command
+{
+public:
+	ClearTasksClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out,
+				   const char        *in_desc,
+				   const char        *out_desc,
+				   Tango::DispLevel  level)
+	:Command(name,in,out,in_desc,out_desc, level)	{};
+
+	ClearTasksClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out)
+	:Command(name,in,out)	{};
+	~ClearTasksClass() {};
+	
+	virtual CORBA::Any *execute (Tango::DeviceImpl *dev, const CORBA::Any &any);
+	virtual bool is_allowed (Tango::DeviceImpl *dev, const CORBA::Any &any)
+	{return (static_cast<Scheduler *>(dev))->is_ClearTasks_allowed(any);}
 };
 
 

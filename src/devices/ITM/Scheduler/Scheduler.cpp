@@ -74,11 +74,14 @@ static const char *RcsId = "$Id:  $";
 //  GetNQueuedTasks   |  get_nqueued_tasks
 //  GetNRunningTasks  |  get_nrunning_tasks
 //  PrintTasks        |  print_tasks
+//  ClearTasks        |  clear_tasks
 //================================================================
 
 //================================================================
-//  Attributes managed is:
+//  Attributes managed are:
 //================================================================
+//  finalResponse         |  Tango::DevString	Scalar
+//  intermediateResponse  |  Tango::DevString	Scalar
 //================================================================
 
 namespace Scheduler_ns
@@ -137,45 +140,15 @@ void Scheduler::delete_device()
 	//	Delete device allocated objects
 
 	
-	
-	/*
-	//## Delete task callback
-	if(m_TaskCallBack){
-		DEBUG_STREAM << "Scheduler::delete_device(): DEBUG: Deleting task callback..." << endl;
-		delete m_TaskCallBack;
-		m_TaskCallBack= 0;
-	}
-	*/
-
-	
 	//## Waits for an existing thread to finish
-	if (m_SchedulerThread) {
+	if(m_SchedulerThread){
 		DEBUG_STREAM << "Scheduler::delete_device(): DEBUG: Shutting down scheduler thread..." << endl;	
-		m_mutex->lock();
-	  m_StopThreadFlag= true;
-		//m_wait_condition->signal();
-    m_mutex->unlock();
-		
-    if(m_TaskManager) m_TaskManager->End();
-		  
-    DEBUG_STREAM << "Scheduler::delete_device(): DEBUG: Waiting for thread to finish..."<< endl;
-    void *ptr;
-   	m_SchedulerThread->join(&ptr);
-    m_SchedulerThread = 0;
-	}
-
-
-	if(m_TaskManagerThread){
-		DEBUG_STREAM << "Scheduler::delete_device(): DEBUG: Shutting down scheduler thread..." << endl;	
-		
 		if(m_TaskManager) m_TaskManager->End();
-
-		delete m_TaskManagerThread;
-		m_TaskManagerThread = 0;
+		delete m_SchedulerThread;
+		m_SchedulerThread = 0;
 	}
 
 
-	
 	//## Delete task manager
 	if(m_TaskManager){
 		DEBUG_STREAM << "Scheduler::delete_device(): DEBUG: Deleting task manager..." << endl;
@@ -184,22 +157,25 @@ void Scheduler::delete_device()
 	}		
 	
 
-	/*
 	//## Delete mutex
-	if(m_wait_condition){
-		DEBUG_STREAM << "Scheduler::delete_device(): DEBUG: Deleting wait_condition..." << endl;
-    delete m_wait_condition;
-    m_wait_condition= 0;
-	}
-
-  if(m_mutex) {
+	if(m_mutex) {
   	DEBUG_STREAM << "Scheduler::delete_device(): DEBUG: Deleting mutex..." << endl;
     delete m_mutex;
     m_mutex= 0;
   }
-  */
+  
+
+	//## Delete task callback
+	if(m_TaskCallBack){
+		DEBUG_STREAM << "Scheduler::delete_device(): DEBUG: Deleting task callback..." << endl;
+		delete m_TaskCallBack;
+		m_TaskCallBack= 0;
+	}
+		
  
 	/*----- PROTECTED REGION END -----*/	//	Scheduler::delete_device
+	delete[] attr_finalResponse_read;
+	delete[] attr_intermediateResponse_read;
 
 	if (Tango::Util::instance()->is_svr_shutting_down()==false  &&
 		Tango::Util::instance()->is_device_restarting(device_name)==false &&
@@ -235,10 +211,18 @@ void Scheduler::init_device()
 	//	Get the device properties from database
 	get_device_property();
 	
+	attr_finalResponse_read = new Tango::DevString[1];
+	attr_intermediateResponse_read = new Tango::DevString[1];
 	/*----- PROTECTED REGION ID(Scheduler::init_device) ENABLED START -----*/
 	
 	//	Initialize device
-	InitDispatcher();
+	try {
+		Init();
+	}
+	catch(...){
+		ERROR_STREAM<<"Scheduler::init_device(): ERROR: Failed to initialize device!"<<endl;
+		return;	
+	}
 
 	/*----- PROTECTED REGION END -----*/	//	Scheduler::init_device
 }
@@ -264,6 +248,8 @@ void Scheduler::get_device_property()
 	dev_prop.push_back(Tango::DbDatum("thread_heartbeat_period"));
 	dev_prop.push_back(Tango::DbDatum("max_trackable_tasks"));
 	dev_prop.push_back(Tango::DbDatum("max_cacheable_device_proxies"));
+	dev_prop.push_back(Tango::DbDatum("max_task_timeout"));
+	dev_prop.push_back(Tango::DbDatum("task_history_time_depth"));
 
 	//	is there at least one property to be read ?
 	if (dev_prop.size()>0)
@@ -322,6 +308,28 @@ void Scheduler::get_device_property()
 		//	And try to extract max_cacheable_device_proxies value from database
 		if (dev_prop[i].is_empty()==false)	dev_prop[i]  >>  max_cacheable_device_proxies;
 
+		//	Try to initialize max_task_timeout from class property
+		cl_prop = ds_class->get_class_property(dev_prop[++i].name);
+		if (cl_prop.is_empty()==false)	cl_prop  >>  max_task_timeout;
+		else {
+			//	Try to initialize max_task_timeout from default device value
+			def_prop = ds_class->get_default_device_property(dev_prop[i].name);
+			if (def_prop.is_empty()==false)	def_prop  >>  max_task_timeout;
+		}
+		//	And try to extract max_task_timeout value from database
+		if (dev_prop[i].is_empty()==false)	dev_prop[i]  >>  max_task_timeout;
+
+		//	Try to initialize task_history_time_depth from class property
+		cl_prop = ds_class->get_class_property(dev_prop[++i].name);
+		if (cl_prop.is_empty()==false)	cl_prop  >>  task_history_time_depth;
+		else {
+			//	Try to initialize task_history_time_depth from default device value
+			def_prop = ds_class->get_default_device_property(dev_prop[i].name);
+			if (def_prop.is_empty()==false)	def_prop  >>  task_history_time_depth;
+		}
+		//	And try to extract task_history_time_depth value from database
+		if (dev_prop[i].is_empty()==false)	dev_prop[i]  >>  task_history_time_depth;
+
 	}
 
 	/*----- PROTECTED REGION ID(Scheduler::get_device_property_after) ENABLED START -----*/
@@ -363,6 +371,42 @@ void Scheduler::read_attr_hardware(TANGO_UNUSED(vector<long> &attr_list))
 	/*----- PROTECTED REGION END -----*/	//	Scheduler::read_attr_hardware
 }
 
+//--------------------------------------------------------
+/**
+ *	Read attribute finalResponse related method
+ *	Description: 
+ *
+ *	Data type:	Tango::DevString
+ *	Attr type:	Scalar
+ */
+//--------------------------------------------------------
+void Scheduler::read_finalResponse(Tango::Attribute &attr)
+{
+	DEBUG_STREAM << "Scheduler::read_finalResponse(Tango::Attribute &attr) entering... " << endl;
+	/*----- PROTECTED REGION ID(Scheduler::read_finalResponse) ENABLED START -----*/
+	//	Set the attribute value
+	attr.set_value(attr_finalResponse_read);
+	
+	/*----- PROTECTED REGION END -----*/	//	Scheduler::read_finalResponse
+}
+//--------------------------------------------------------
+/**
+ *	Read attribute intermediateResponse related method
+ *	Description: 
+ *
+ *	Data type:	Tango::DevString
+ *	Attr type:	Scalar
+ */
+//--------------------------------------------------------
+void Scheduler::read_intermediateResponse(Tango::Attribute &attr)
+{
+	DEBUG_STREAM << "Scheduler::read_intermediateResponse(Tango::Attribute &attr) entering... " << endl;
+	/*----- PROTECTED REGION ID(Scheduler::read_intermediateResponse) ENABLED START -----*/
+	//	Set the attribute value
+	attr.set_value(attr_intermediateResponse_read);
+	
+	/*----- PROTECTED REGION END -----*/	//	Scheduler::read_intermediateResponse
+}
 
 //--------------------------------------------------------
 /**
@@ -382,135 +426,72 @@ void Scheduler::add_dynamic_attributes()
 
 //--------------------------------------------------------
 /**
- *	Read pipe FinalResponse related method
+ *	Read pipe FinalResponsePipe related method
  *	Description: Task final response data structure
  */
 //--------------------------------------------------------
-void Scheduler::read_FinalResponse(Tango::Pipe &pipe)
+void Scheduler::read_FinalResponsePipe(Tango::Pipe &pipe)
 {
-	DEBUG_STREAM << "Scheduler::read_FinalResponse(Tango::Pipe &pipe) entering... " << endl;
-	/*----- PROTECTED REGION ID(Scheduler::read_FinalResponse) ENABLED START -----*/
+	DEBUG_STREAM << "Scheduler::read_FinalResponsePipe(Tango::Pipe &pipe) entering... " << endl;
+	/*----- PROTECTED REGION ID(Scheduler::read_FinalResponsePipe) ENABLED START -----*/
 	
 	//	Add your own code here
-
-	std::string pipe_name= "FinalResponse";
-		pipe.set_name(pipe_name);
-		pipe.set_root_blob_name("FinalResponse");
-		std::vector<std::string> de_names {"x","y"};
-		pipe.set_data_elt_names(de_names);
-
-		double x= 4.5;
-		double y= 6.7;
-		pipe << x << y;
-
 	try {	
-		//Tango::Pipe& dev_pipe= this->get_device_class()->get_pipe_by_name("FinalResponse");
-		//Tango::DevicePipeBlob& dev_pipe_blob= dev_pipe.get_blob();
-		//pipe << dev_pipe_blob;
-		//std::vector<Tango::Pipe*>& pipes= this->get_device_class()->get_pipe_list(); 
-		//pipe= *(pipes[0]);
-	
+		pipe.set_root_blob_name("FinalResponsePipe");
+		std::vector<std::string> blob_names {"FinalResponsePipeBlob"};
+		pipe.set_data_elt_names(blob_names);
+		
+		INFO_STREAM<<"Scheduler::read_myPipe(): INFO: before pipe set"<<endl;
+		pipe<<m_FinalResponsePipeBlob;
+		INFO_STREAM<<"Scheduler::read_myPipe(): INFO: after pipe set"<<endl;
+		
 		/*
-		Tango::Pipe* dev_pipe= (pipes[0]);
-		std::string pipe_name= "FinalResponse";
-		dev_pipe->set_name(pipe_name);
-		dev_pipe->set_root_blob_name("FinalResponse");
+		m_FinalResponsePipeBlob.set_name("FinalResponseBlob");
 		std::vector<std::string> de_names {"x","y"};
-		dev_pipe->set_data_elt_names(de_names);
-		
-		double x= 4.5;
-		double y= 6.7;
-		(*dev_pipe) ["x"] << x;
-		(*dev_pipe) ["y"] << y;
-
-		INFO_STREAM<<"pto 1"<<endl;
-		Tango::DevicePipeBlob& dev_pipe_blob= dev_pipe->get_blob();
-		INFO_STREAM<<"pto 2"<<endl;
-
-		INFO_STREAM<<"get_root_blob_name ()="<<dev_pipe->get_root_blob_name()<<endl;
-		INFO_STREAM<<"get_data_elt_nb="<<dev_pipe_blob.get_data_elt_nb()<<endl;
+		m_FinalResponsePipeBlob.set_data_elt_names(de_names);
+		INFO_STREAM<<"Scheduler::read_FinalResponsePipe():: INFO: before blob set"<<endl;
+		m_FinalResponsePipeBlob << x << y;
+		INFO_STREAM<<"Scheduler::read_FinalResponsePipe():: INFO: after blob set"<<endl;
 		*/
-		
+
 		/*
-		Tango::DevicePipeBlob blob1;
-		blob1.set_name("blob1");
-		std::vector<std::string> blob1_fields {"id","name"};
-		blob1.set_data_elt_names(blob1_fields);
-		blob1["id"] << std::string("id1");
-		blob1["name"] << std::string("cmd1");
-
-		Tango::DevicePipeBlob blob2;
-		blob2.set_name("blob2");
-		std::vector<std::string> blob2_fields {"id","name"};
-		blob2.set_data_elt_names(blob2_fields);
-		blob2["id"] << std::string("id2");
-		blob2["name"] << std::string("cmd2");
-	
-		dev_pipe.set_root_blob_name("FinalResponse");
-		std::vector<std::string> de_names {"blob1","blob2"};
-		dev_pipe.set_data_elt_names(de_names);
-		dev_pipe << blob1 << blob2;
-	
-		INFO_STREAM<<"pto 1"<<endl;
-		Tango::DevicePipeBlob& dev_pipe_blob= dev_pipe.get_blob();
-		INFO_STREAM<<"pto 2"<<endl;
-
-		INFO_STREAM<<"get_root_blob_name ()="<<dev_pipe.get_root_blob_name()<<endl;
+		pipe.set_root_blob_name("FinalResponsePipe");
+		pipe.set_data_elt_nb(1);
+		INFO_STREAM<<"Scheduler::read_FinalResponsePipe(): INFO: before pipe set"<<endl;
+		//pipe << (*m_FinalResponsePipeBlob);
+		pipe << m_FinalResponsePipeBlob;
+		INFO_STREAM<<"Scheduler::read_FinalResponsePipe(): INFO: after pipe set"<<endl;
 		*/
-		/*
-		Tango::Pipe& dev_pipe= this->get_device_class()->get_pipe_by_name("FinalResponse");
-		std::string pipe_name= "FinalResponse";
-		dev_pipe.set_name(pipe_name);
-		dev_pipe.set_root_blob_name("FinalResponse");
-		std::vector<std::string> de_names {"x","y"};
-		dev_pipe.set_data_elt_names(de_names);
-		
-		double x= 4.5;
-		double y= 6.7;
-		dev_pipe ["x"] << x;
-		dev_pipe ["y"] << y;
 
-		INFO_STREAM<<"pto 1"<<endl;
-		Tango::DevicePipeBlob& dev_pipe_blob= dev_pipe.get_blob();
-		INFO_STREAM<<"pto 2"<<endl;
-
-		INFO_STREAM<<"get_root_blob_name ()="<<dev_pipe.get_root_blob_name()<<endl;
-		*/
-		
-		//pipe.set_root_blob_name("FinalResponse");
-		//pipe.set_data_elt_nb(1);
-		//INFO_STREAM<<"pto 3"<<endl;
-
-		//pipe << dev_pipe_blob;
-		//INFO_STREAM<<"pto 4"<<endl;
+			
 	}
 	catch(Tango::DevFailed& e){
 		Tango::Except::print_exception(e);
-		ERROR_STREAM << "read_FinalResponse(): ERROR: Tango exception occurred while setting pipe!"<<endl;	
+		ERROR_STREAM << "read_FinalResponsePipe(): ERROR: Tango exception occurred while setting pipe!"<<endl;	
 	}
 	catch(std::exception &e){
-		ERROR_STREAM << "read_FinalResponse(): ERROR: Run time exception occurred (e="<<e.what()<<") while setting pipe!"<<endl;	
+		ERROR_STREAM << "read_FinalResponsePipe(): ERROR: Run time exception occurred (e="<<e.what()<<") while setting pipe!"<<endl;	
 	}
 	catch(...){
-		ERROR_STREAM << "read_FinalResponse(): ERROR: Unknown exception occurred while setting pipe!"<<endl;	
+		ERROR_STREAM << "read_FinalResponsePipe(): ERROR: Unknown exception occurred while setting pipe!"<<endl;	
 	}
 	
-	/*----- PROTECTED REGION END -----*/	//	Scheduler::read_FinalResponse
+	/*----- PROTECTED REGION END -----*/	//	Scheduler::read_FinalResponsePipe
 }
 //--------------------------------------------------------
 /**
- *	Read pipe IntermediateResponse related method
+ *	Read pipe IntermediateResponsePipe related method
  *	Description: intermediate task response data structure
  */
 //--------------------------------------------------------
-void Scheduler::read_IntermediateResponse(Tango::Pipe &pipe)
+void Scheduler::read_IntermediateResponsePipe(Tango::Pipe &pipe)
 {
-	DEBUG_STREAM << "Scheduler::read_IntermediateResponse(Tango::Pipe &pipe) entering... " << endl;
-	/*----- PROTECTED REGION ID(Scheduler::read_IntermediateResponse) ENABLED START -----*/
+	DEBUG_STREAM << "Scheduler::read_IntermediateResponsePipe(Tango::Pipe &pipe) entering... " << endl;
+	/*----- PROTECTED REGION ID(Scheduler::read_IntermediateResponsePipe) ENABLED START -----*/
 	
 	//	Add your own code here
 	
-	/*----- PROTECTED REGION END -----*/	//	Scheduler::read_IntermediateResponse
+	/*----- PROTECTED REGION END -----*/	//	Scheduler::read_IntermediateResponsePipe
 }
 //--------------------------------------------------------
 /**
@@ -596,6 +577,69 @@ void Scheduler::read_tasks(Tango::Pipe &pipe)
 }
 //--------------------------------------------------------
 /**
+ *	Read pipe myPipe related method
+ *	Description: 
+ */
+//--------------------------------------------------------
+void Scheduler::read_myPipe(Tango::Pipe &pipe)
+{
+	DEBUG_STREAM << "Scheduler::read_myPipe(Tango::Pipe &pipe) entering... " << endl;
+	/*----- PROTECTED REGION ID(Scheduler::read_myPipe) ENABLED START -----*/
+	
+	//	Add your own code here
+	/*
+	try {	
+		pipe.set_root_blob_name("myPipe");
+		std::vector<std::string> de_names {"x","y"};
+		pipe.set_data_elt_names(de_names);
+		INFO_STREAM<<"Scheduler::read_myPipe(): INFO: before pipe set"<<endl;
+		pipe["x"] << x;
+		pipe["y"] << y;
+		INFO_STREAM<<"Scheduler::read_myPipe(): INFO: after pipe set"<<endl;
+	}
+	catch(Tango::DevFailed& e){
+		Tango::Except::print_exception(e);
+		ERROR_STREAM << "read_myPipe(): ERROR: Tango exception occurred while setting pipe!"<<endl;	
+	}
+	catch(std::exception &e){
+		ERROR_STREAM << "read_myPipe(): ERROR: Run time exception occurred (e="<<e.what()<<") while setting pipe!"<<endl;	
+	}
+	catch(...){
+		ERROR_STREAM << "read_myPipe(): ERROR: Unknown exception occurred while setting pipe!"<<endl;	
+	}
+	*/
+
+
+	try {	
+		
+		//myPipeBlob.set_name("myPipeBlob");
+		//std::vector<std::string> de_names {"x","y"};
+		//myPipeBlob.set_data_elt_names(de_names);
+		//myPipeBlob << x << y;
+	
+		pipe.set_root_blob_name("myPipe");
+		std::vector<std::string> blob_names {"myPipeBlob"};
+		pipe.set_data_elt_names(blob_names);
+		
+		INFO_STREAM<<"Scheduler::read_myPipe(): INFO: before pipe set"<<endl;
+		pipe<<myPipeBlob;
+		INFO_STREAM<<"Scheduler::read_myPipe(): INFO: after pipe set"<<endl;
+	}
+	catch(Tango::DevFailed& e){
+		Tango::Except::print_exception(e);
+		ERROR_STREAM << "read_myPipe(): ERROR: Tango exception occurred while setting pipe!"<<endl;	
+	}
+	catch(std::exception &e){
+		ERROR_STREAM << "read_myPipe(): ERROR: Run time exception occurred (e="<<e.what()<<") while setting pipe!"<<endl;	
+	}
+	catch(...){
+		ERROR_STREAM << "read_myPipe(): ERROR: Unknown exception occurred while setting pipe!"<<endl;	
+	}
+
+	/*----- PROTECTED REGION END -----*/	//	Scheduler::read_myPipe
+}
+//--------------------------------------------------------
+/**
  *	Command ScheduleTask related method
  *	Description: Schedule a command
  *
@@ -641,6 +685,7 @@ Tango::DevVarLongStringArray *Scheduler::schedule_task(const Tango::DevVarString
 	std::string cmd_args= std::string((*argin)[0]);
 	std::string cmd_device= std::string((*argin)[1]);
 	std::string cmd_name= std::string((*argin)[2]);
+
 	//============================
 	//==   VALIDATE CMD ARGS
 	//============================
@@ -852,7 +897,7 @@ Tango::DevVarLongStringArray *Scheduler::revoke_task(Tango::DevString argin)
 	argout->svalue.length(1);
 
 	//Check arg
-	if(argin==""){
+	if(strcmp(argin,"")==0){
 		ERROR_STREAM<<"Scheduler::RevokeTask(): ERROR: Invalid argument given!"<<endl;
 		ack= -1;
 		reply= "Invalid argument given (empty string)!";
@@ -957,6 +1002,27 @@ void Scheduler::print_tasks()
 }
 //--------------------------------------------------------
 /**
+ *	Command ClearTasks related method
+ *	Description: Clear task list
+ *
+ */
+//--------------------------------------------------------
+void Scheduler::clear_tasks()
+{
+	DEBUG_STREAM << "Scheduler::ClearTasks()  - " << device_name << endl;
+	/*----- PROTECTED REGION ID(Scheduler::clear_tasks) ENABLED START -----*/
+	
+	//	Add your own code
+	bool removeRunningTasks= false;
+	if(m_TaskManager->ClearTasks(static_cast<double>(task_history_time_depth),removeRunningTasks)<0){
+		ERROR_STREAM<<"Scheduler::ClearTasks(): ERROR: Failed to clear old tasks from the list!"<<endl;
+		return;
+	}	
+
+	/*----- PROTECTED REGION END -----*/	//	Scheduler::clear_tasks
+}
+//--------------------------------------------------------
+/**
  *	Method      : Scheduler::add_dynamic_commands()
  *	Description : Create the dynamic commands if any
  *                for specified device.
@@ -974,28 +1040,32 @@ void Scheduler::add_dynamic_commands()
 /*----- PROTECTED REGION ID(Scheduler::namespace_ending) ENABLED START -----*/
 
 //	Additional Methods
-void Scheduler::InitDispatcher(){
+void Scheduler::Init(){
 
   //## Create main zmq context
-  //DEBUG_STREAM << "Scheduler::InitDispatcher(): DEBUG: Init zmq context..."<< endl;
+  //DEBUG_STREAM << "Scheduler::Init(): DEBUG: Init zmq context..."<< endl;
   //context= 0;
   //context = zmq_ctx_new();
    
 	//## Init mutex
-  DEBUG_STREAM << "Scheduler::InitDispatcher(): DEBUG: Init mutex..."<< endl;
+  DEBUG_STREAM << "Scheduler::Init(): DEBUG: Init mutex..."<< endl;
   m_mutex= 0;
   m_mutex = new omni_mutex();
 
-	//m_wait_condition= 0;
-	//m_wait_condition = new omni_condition(m_mutex);
-
 	//## Init Task CallBack	
+	DEBUG_STREAM << "Scheduler::Init(): DEBUG: Init task callback..."<< endl;
 	Tango::ApiUtil::instance()->set_asynch_cb_sub_model(Tango::PUSH_CALLBACK);
 	m_TaskCallBack= 0;
 	m_TaskCallBack= new TaskCallBack(this);
 	
+	//m_FinalResponsePipeBlob= std::make_shared<Tango::DevicePipeBlob>("FinalResponseBlob");
+	//std::vector<std::string> field_names {"CommandID","LMCID","ResponseType","ReturnCode","ResponseMsg"};
+	std::vector<std::string> field_names {"x","y"};
+	//m_FinalResponsePipeBlob->set_data_elt_names(field_names);
+	m_FinalResponsePipeBlob.set_data_elt_names(field_names);
 	
 	//## Init task manager
+	DEBUG_STREAM << "Scheduler::Init(): DEBUG: Init task manager..."<< endl;
 	m_TaskManager= 0;
 	m_TaskManager= new TaskManager(this,m_TaskCallBack);
 	m_TaskManager->SetMaxNTasksInQueue(max_queueable_tasks);
@@ -1003,18 +1073,13 @@ void Scheduler::InitDispatcher(){
 	m_TaskManager->SetMaxCachedDevProxies(max_cacheable_device_proxies);
 
 	//## Start the scheduler thread
-  DEBUG_STREAM << "Scheduler::InitDispatcher(): DEBUG: Init scheduler thread..."<< endl;
+  DEBUG_STREAM << "Scheduler::Init(): DEBUG: Init scheduler thread..."<< endl;
   m_StopThreadFlag= false;
 	m_SchedulerThread= 0;
-  //m_SchedulerThread = new SchedulerThread(this);
-  //m_SchedulerThread->start_undetached();
+  m_SchedulerThread = new SchedulerThread(this);
+  m_SchedulerThread->Start();
 
-
-	m_TaskManagerThread = 0;
-	m_TaskManagerThread= new TaskManagerThread(this);
-	m_TaskManagerThread->Start();
-
-}//close InitDispatcher() 
+}//close Init() 
 
 template<typename T>
 int Scheduler::Schedule(std::string cmd_id,std::string cmd_name,std::string t_start,T cmd_argin,std::string t_end,std::string cmd_device){
@@ -1049,8 +1114,6 @@ int Scheduler::Schedule(std::string cmd_id,std::string cmd_name,std::string t_st
 		WARN_STREAM<<"Scheduler::Schedule(): WARN: Invalid activation timestamp arg (empty string given)"<<endl;
 		return -1;
 	}
-	//std::time_t epoch_start_local= Utils_ns::SysUtils::TimeStringToLocalEpoch(t_start);
-	//auto t_start_local= Utils_ns::SysUtils::TimeStringToLocalChronoTimeStamp(t_start);	
 	std::time_t epoch_start_local= Utils_ns::SysUtils::TimeStringToUTCEpoch(t_start);
 	auto t_start_local= Utils_ns::SysUtils::TimeStringToUTCChronoTimeStamp(t_start);
 	DEBUG_STREAM<<"Scheduler::Schedule(): DEBUG: t_start="<<t_start<<" epoch_start_local="<<epoch_start_local<<endl;
@@ -1063,10 +1126,8 @@ int Scheduler::Schedule(std::string cmd_id,std::string cmd_name,std::string t_st
 	}
 
 	//--> Check expiration time and convert to timestamp	
-	auto t_end_local= t_start_local;
+	auto t_end_local= t_start_local + std::chrono::seconds(max_task_timeout);
 	if(hasExpirationTime) {
-		//std::time_t epoch_end_local= Utils_ns::SysUtils::TimeStringToLocalEpoch(t_end);
-		//t_end_local= Utils_ns::SysUtils::TimeStringToLocalChronoTimeStamp(t_end);
 		std::time_t epoch_end_local= Utils_ns::SysUtils::TimeStringToUTCEpoch(t_end);
 		t_end_local= Utils_ns::SysUtils::TimeStringToUTCChronoTimeStamp(t_end);
 		DEBUG_STREAM<<"Scheduler::Schedule(): DEBUG: t_end="<<t_end<<" epoch_end_local="<<epoch_end_local<<endl;
@@ -1205,17 +1266,6 @@ int Scheduler::Schedule(std::string cmd_id,std::string cmd_name,std::string t_st
 }//clse Scheduler::Schedule()
 
 
-
-Tango::DevicePipe Scheduler::SetTaskPipe(Task& task){
-
-	//Create the final response pipe
-	Tango::DevicePipe taskPipe("task");
-	std::vector<std::string> field_names {"id","name","device_name","exec_status","status","tstart","tend"};
-	taskPipe.set_data_elt_names(field_names);
-
-	return taskPipe;
-
-}//close CreateAndPushFinalRespPipe()
 
 
 /*----- PROTECTED REGION END -----*/	//	Scheduler::namespace_ending

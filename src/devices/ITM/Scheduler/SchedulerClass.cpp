@@ -284,6 +284,24 @@ CORBA::Any *PrintTasksClass::execute(Tango::DeviceImpl *device, TANGO_UNUSED(con
 	return new CORBA::Any();
 }
 
+//--------------------------------------------------------
+/**
+ * method : 		ClearTasksClass::execute()
+ * description : 	method to trigger the execution of the command.
+ *
+ * @param	device	The device on which the command must be executed
+ * @param	in_any	The command input data
+ *
+ *	returns The command output data (packed in the Any object)
+ */
+//--------------------------------------------------------
+CORBA::Any *ClearTasksClass::execute(Tango::DeviceImpl *device, TANGO_UNUSED(const CORBA::Any &in_any))
+{
+	cout2 << "ClearTasksClass::execute(): arrived" << endl;
+	((static_cast<Scheduler *>(device))->clear_tasks());
+	return new CORBA::Any();
+}
+
 
 //===================================================================
 //	Properties management
@@ -400,6 +418,34 @@ void SchedulerClass::set_default_property()
 	prop_def  = "10";
 	vect_data.clear();
 	vect_data.push_back("10");
+	if (prop_def.length()>0)
+	{
+		Tango::DbDatum	data(prop_name);
+		data << vect_data ;
+		dev_def_prop.push_back(data);
+		add_wiz_dev_prop(prop_name, prop_desc,  prop_def);
+	}
+	else
+		add_wiz_dev_prop(prop_name, prop_desc);
+	prop_name = "max_task_timeout";
+	prop_desc = "Maximum duration in seconds allowed for tasks in the queue.\nTasks without an expiration time given will be assigned an \nexpiration time = start + timeout.";
+	prop_def  = "60";
+	vect_data.clear();
+	vect_data.push_back("60");
+	if (prop_def.length()>0)
+	{
+		Tango::DbDatum	data(prop_name);
+		data << vect_data ;
+		dev_def_prop.push_back(data);
+		add_wiz_dev_prop(prop_name, prop_desc,  prop_def);
+	}
+	else
+		add_wiz_dev_prop(prop_name, prop_desc);
+	prop_name = "task_history_time_depth";
+	prop_desc = "Max time interval (in seconds) used to maintain tasks in the task list.";
+	prop_def  = "3600";
+	vect_data.clear();
+	vect_data.push_back("3600");
 	if (prop_def.length()>0)
 	{
 		Tango::DbDatum	data(prop_name);
@@ -616,6 +662,56 @@ void SchedulerClass::attribute_factory(vector<Tango::Attr *> &att_list)
 	//	Call atribute_factory for inherited class
 	BaseDevice_ns::BaseDeviceClass::attribute_factory(att_list);
 
+	//	Attribute : finalResponse
+	finalResponseAttrib	*finalresponse = new finalResponseAttrib();
+	Tango::UserDefaultAttrProp	finalresponse_prop;
+	//	description	not set for finalResponse
+	//	label	not set for finalResponse
+	//	unit	not set for finalResponse
+	//	standard_unit	not set for finalResponse
+	//	display_unit	not set for finalResponse
+	//	format	not set for finalResponse
+	//	max_value	not set for finalResponse
+	//	min_value	not set for finalResponse
+	//	max_alarm	not set for finalResponse
+	//	min_alarm	not set for finalResponse
+	//	max_warning	not set for finalResponse
+	//	min_warning	not set for finalResponse
+	//	delta_t	not set for finalResponse
+	//	delta_val	not set for finalResponse
+	
+	finalresponse->set_default_properties(finalresponse_prop);
+	//	Not Polled
+	finalresponse->set_disp_level(Tango::OPERATOR);
+	//	Not Memorized
+	finalresponse->set_change_event(true, false);
+	att_list.push_back(finalresponse);
+
+	//	Attribute : intermediateResponse
+	intermediateResponseAttrib	*intermediateresponse = new intermediateResponseAttrib();
+	Tango::UserDefaultAttrProp	intermediateresponse_prop;
+	//	description	not set for intermediateResponse
+	//	label	not set for intermediateResponse
+	//	unit	not set for intermediateResponse
+	//	standard_unit	not set for intermediateResponse
+	//	display_unit	not set for intermediateResponse
+	//	format	not set for intermediateResponse
+	//	max_value	not set for intermediateResponse
+	//	min_value	not set for intermediateResponse
+	//	max_alarm	not set for intermediateResponse
+	//	min_alarm	not set for intermediateResponse
+	//	max_warning	not set for intermediateResponse
+	//	min_warning	not set for intermediateResponse
+	//	delta_t	not set for intermediateResponse
+	//	delta_val	not set for intermediateResponse
+	
+	intermediateresponse->set_default_properties(intermediateresponse_prop);
+	//	Not Polled
+	intermediateresponse->set_disp_level(Tango::OPERATOR);
+	//	Not Memorized
+	intermediateresponse->set_change_event(true, false);
+	att_list.push_back(intermediateresponse);
+
 
 	//	Create a list of static attributes
 	create_static_attribute_list(get_class_attr()->get_attr_list());
@@ -640,17 +736,17 @@ void SchedulerClass::pipe_factory()
 	
 	/*----- PROTECTED REGION END -----*/	//	SchedulerClass::pipe_factory_before
 	Tango::UserDefaultPipeProp udpp;
-	FinalResponseClass	*pFinalResponse = new FinalResponseClass("FinalResponse",Tango::OPERATOR);
+	FinalResponsePipeClass	*pFinalResponsePipe = new FinalResponsePipeClass("FinalResponsePipe",Tango::OPERATOR);
 	udpp.set_description("Task final response data structure");
 	udpp.set_label("FinalResponse");
-	pFinalResponse->set_default_properties(udpp);
-	pipe_list.push_back(pFinalResponse);
+	pFinalResponsePipe->set_default_properties(udpp);
+	pipe_list.push_back(pFinalResponsePipe);
 
-	IntermediateResponseClass	*pIntermediateResponse = new IntermediateResponseClass("IntermediateResponse",Tango::OPERATOR);
+	IntermediateResponsePipeClass	*pIntermediateResponsePipe = new IntermediateResponsePipeClass("IntermediateResponsePipe",Tango::OPERATOR);
 	udpp.set_description("intermediate task response data structure");
 	udpp.set_label("intermediateResponse");
-	pIntermediateResponse->set_default_properties(udpp);
-	pipe_list.push_back(pIntermediateResponse);
+	pIntermediateResponsePipe->set_default_properties(udpp);
+	pipe_list.push_back(pIntermediateResponsePipe);
 
 	queued_tasksClass	*pqueued_tasks = new queued_tasksClass("queued_tasks",Tango::OPERATOR);
 	udpp.set_description("Queued tasks");
@@ -663,6 +759,12 @@ void SchedulerClass::pipe_factory()
 	udpp.set_label("tasks");
 	ptasks->set_default_properties(udpp);
 	pipe_list.push_back(ptasks);
+
+	myPipeClass	*pmyPipe = new myPipeClass("myPipe",Tango::OPERATOR);
+	udpp.set_description("");
+	udpp.set_label("myPipe");
+	pmyPipe->set_default_properties(udpp);
+	pipe_list.push_back(pmyPipe);
 
 	/*----- PROTECTED REGION ID(SchedulerClass::pipe_factory_after) ENABLED START -----*/
 	
@@ -751,6 +853,16 @@ void SchedulerClass::command_factory()
 			"",
 			Tango::OPERATOR);
 	command_list.push_back(pPrintTasksCmd);
+
+	//	Command ClearTasks
+	ClearTasksClass	*pClearTasksCmd =
+		new ClearTasksClass("ClearTasks",
+			Tango::DEV_VOID, Tango::DEV_VOID,
+			"",
+			"",
+			Tango::OPERATOR);
+	pClearTasksCmd->set_polling_period(10000);
+	command_list.push_back(pClearTasksCmd);
 
 	/*----- PROTECTED REGION ID(SchedulerClass::command_factory_after) ENABLED START -----*/
 	
