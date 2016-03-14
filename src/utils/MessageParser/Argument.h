@@ -33,8 +33,8 @@ class Argument {
 	public:
 		virtual ~Argument() {}
 	public:
-		virtual std::string GetName() = 0;
-		virtual std::string GetType() = 0;
+		virtual std::string GetName() const = 0;
+		virtual std::string GetType() const = 0;
 		
 		virtual void SetTypeCode() = 0;
 		virtual void SetValueFromStream(std::stringstream& sstream) = 0;
@@ -179,8 +179,8 @@ class ArgumentImpl : public Argument {
 
 	public:
 
-		std::string GetName(){return name;}
-		std::string GetType(){return type;}
+		std::string GetName() const {return name;}
+		std::string GetType() const {return type;}
 
 
 		Argument* Clone() const { 

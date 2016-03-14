@@ -31,6 +31,18 @@ using namespace std;
 
 namespace MessageParser_ns {
 
+
+struct MatchArg {
+	MatchArg(const std::string& name) : m_name(name) {}
+ 	bool operator()(const Argument* obj) const {
+		std::string arg_name= obj->GetName();
+  	return (arg_name==m_name);
+ 	}
+ 	private:
+  	const std::string& m_name;
+};
+
+
 class Message {
 
 	public:
@@ -94,11 +106,31 @@ class Message {
 		/** 
 		\brief Get arguments
  		*/
-		std::vector<Argument*> GetArguments(){return m_args;}
+		std::vector<Argument*> GetArguments(){return m_args;}	
+		/** 
+		\brief Get argument
+ 		*/
+		Argument* GetArgument(int index){
+			if(m_args.empty() || index<0 || index>=(int)(m_args.size())) return 0;
+			return m_args[index];
+		}
 		/** 
 		\brief Has arguments?
  		*/
 		bool HasArguments(){return (m_args.size()>0 && HasField(std::string("arguments")));}
+
+
+		/** 
+		\brief Find argument by name
+ 		*/
+		Argument* FindArgument(int& index,std::string name){
+			if(m_args.empty()) return 0;
+			std::vector<Argument*>::iterator it = std::find_if(m_args.begin(), m_args.end(), MatchArg(name));
+			if (it==m_args.end()) return 0;//not found in collection
+			size_t pos = it-m_args.begin();
+			index= pos;
+			return GetArgument(index);
+		}//close FindArgument()
 
 
 		/** 
@@ -235,18 +267,22 @@ class Message {
  		*/
 		std::shared_ptr<Tango::DevicePipeBlob> GetArgumentPipeBlobPtr(){
 
-			//Init blob
-			auto blob= std::make_shared<Tango::DevicePipeBlob>();
-			blob->set_name("arguments");
-			std::vector<std::string> field_names;
-			for(unsigned int i=0;i<m_args.size();i++){
-				std::string arg_name= m_args[i]->GetName();
-				field_names.push_back(arg_name);
-			}		
-			blob->set_data_elt_names(field_names);
-				
-			//Fill pipe
-			try{					
+			
+			std::shared_ptr<Tango::DevicePipeBlob> blob= 0;	
+			try{				
+
+				//Init blob
+				blob= std::make_shared<Tango::DevicePipeBlob>("arguments");
+				blob->set_name("arguments");
+				std::vector<std::string> field_names;
+				for(unsigned int i=0;i<m_args.size();i++){
+					std::string arg_name= m_args[i]->GetName();
+					field_names.push_back(arg_name);
+				}		
+				blob->set_data_elt_names(field_names);
+	
+				//Fill pipe
+				blob->set_data_elt_nb(m_args.size());
 				for(unsigned int i=0;i<m_args.size();i++){		
 					std::string arg_name= m_args[i]->GetName();	
 					auto arg_blob= m_args[i]->GetPipeBlobPtr();				
@@ -418,7 +454,7 @@ class Response : public Message {
 		/** 
 		\brief Get pipe
  		*/
-		int GetPipe(Tango::Pipe& pipe);
+		int GetPipeBlob(Tango::DevicePipeBlob& pipe);
 
 	protected:
 		ResponseType m_type;
@@ -514,9 +550,6 @@ class Request : public Message {
 		short GetRetryNumber(){return m_retry_number;}
 
 	
-		
-		
-
 	protected:
 		std::string m_type;//mandatory
 		std::string m_source_id;//mandatory
@@ -536,6 +569,10 @@ class MessageUtils {
 	public:
 		static int MakeEchoResponse(Response& res,Request& req,std::string lmc_id,std::string msg);
 		static int MakeEchoResponse(std::string& res,Request& req,std::string lmc_id,std::string msg);
+		static int MakeErrorResponse(Response& res,Request& req,std::string lmc_id,std::string msg);
+		static int MakeErrorResponse(std::string& res,Request& req,std::string lmc_id,std::string msg);
+		static int MakeSuccessResponse(Response& res,Request& req,std::string lmc_id,std::string msg);
+		static int MakeSuccessResponse(std::string& res,Request& req,std::string lmc_id,std::string msg);
 		
 
 };//close class

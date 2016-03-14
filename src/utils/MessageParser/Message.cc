@@ -376,45 +376,46 @@ int Response::GetJson(Json::Value& root){
 }//close GetJson()
 
 
-int Response::GetPipe(Tango::Pipe& pipe){
+//int Response::GetPipe(Tango::Pipe& pipe){
+int Response::GetPipeBlob(Tango::DevicePipeBlob& blob){
 
 	bool hasArgs= HasArguments();
 	Tango::DevShort type= static_cast<Tango::DevShort>(m_type);
 
 	try {
-		pipe.set_root_blob_name("FinalResponse");
+		blob.set_name("FinalResponseBlob");
 		std::vector<std::string> field_names {"CommandID","LMCID","ResponseType","ReturnCode","ResponseMsg"};
-		//if(hasArgs) field_names.push_back("Arguments");
-		pipe.set_data_elt_names(field_names);
+		if(hasArgs) field_names.push_back("Arguments");
+		blob.set_data_elt_names(field_names);
 				
-		pipe["CommandID"] << m_id;
-		pipe["LMCID"] << m_lmc_id;
-		pipe["ResponseType"] << type;
-		pipe["ReturnCode"] << m_return_code;
-		pipe["ResponseMsg"] << m_response_msg;
+		blob["CommandID"] << m_id;
+		blob["LMCID"] << m_lmc_id;
+		blob["ResponseType"] << type;
+		blob["ReturnCode"] << m_return_code;
+		blob["ResponseMsg"] << m_response_msg;
 
-		/*
+		
 		if(hasArgs){
 			auto args_blob= GetArgumentPipeBlobPtr();
 			if(args_blob){
 				throw std::runtime_error("Failed to get arguments pipe blob");
 			}
-			pipe["Arguments"] << *args_blob;
+			blob["Arguments"] << *args_blob;
 		}
-		*/
+		
 
 	}//close try block
 	catch(Tango::DevFailed& e){
 		Tango::Except::print_exception(e);
-		cerr<<"Response::GetPipe(): ERROR: Exception occurred while creating and filling response message pipe!"<<endl;
+		cerr<<"Response::GetPipeBlob(): ERROR: Exception occurred while creating and filling response message pipe!"<<endl;
 		return -1;
 	}
 	catch(std::exception &e){
-		cerr << "Response::GetPipe(): ERROR: Run time exception occurred (e="<<e.what()<<") while creating and filling response message pipe!"<<endl;	
+		cerr << "Response::GetPipeBlob(): ERROR: Run time exception occurred (e="<<e.what()<<") while creating and filling response message pipe!"<<endl;	
 		return -1;
 	}
 	catch(...){
-		cerr<<"Response::GetPipe(): ERROR: Unknown exception occurred while creating and filling response message pipe!"<<endl;
+		cerr<<"Response::GetPipeBlob(): ERROR: Unknown exception occurred while creating and filling response message pipe!"<<endl;
 		return -1;
 	}
 	return 0;
@@ -432,6 +433,97 @@ MessageUtils::MessageUtils() {
 MessageUtils::~MessageUtils(){
 
 }
+
+int MessageUtils::MakeSuccessResponse(Response& res,Request& req,std::string lmc_id,std::string msg){
+
+	//Check request
+	if(!req.Validate()){
+		cerr<<"MessageUtils::MakeSuccessResponse(): ERROR: Invalid request object given!"<<endl;
+		return -1;
+	}
+	
+	//Fill response message
+	res.SetId(req.GetId());
+	res.SetLMCId(lmc_id);
+	res.SetType(MessageParser_ns::ACK_RESPONSE);
+	res.SetReturnCode(MessageParser_ns::ACK);
+	res.SetResponseMessage(msg);
+
+	//std::vector<Argument*> args= req.GetArguments();
+	//if(req.HasArguments()) res.CopyArguments(args);
+
+	if(!res.Validate()){
+		cerr<<"MessageUtils::MakeSuccessResponse(): ERROR: Invalid response object created!"<<endl;
+		return -1;
+	}
+
+	return 0;
+}//close MakeSuccessResponse()
+
+int MessageUtils::MakeSuccessResponse(std::string& jsonString,Request& req,std::string lmc_id,std::string msg){
+
+	Response res;
+	if(MakeErrorResponse(res,req,lmc_id,msg)<0){
+		cerr<<"MessageUtils::MakeSuccessResponse(): ERROR: Failed to encode response to Response!"<<endl;	
+		return -1;
+	}
+	res.Print();
+
+	if(res.GetJsonString(jsonString,true)<0){
+		cerr<<"MessageUtils::MakeSuccessResponse(): ERROR: Failed to encode response to json string!"<<endl;
+		return -1;
+	}
+
+	return 0;
+
+}//close MakeSuccessResponse()
+
+
+
+int MessageUtils::MakeErrorResponse(Response& res,Request& req,std::string lmc_id,std::string msg){
+
+	//Check request
+	if(!req.Validate()){
+		cerr<<"MessageUtils::MakeErrorResponse(): ERROR: Invalid request object given!"<<endl;
+		return -1;
+	}
+	
+	//Fill response message
+	res.SetId(req.GetId());
+	res.SetLMCId(lmc_id);
+	res.SetType(MessageParser_ns::ACK_RESPONSE);
+	res.SetReturnCode(MessageParser_ns::NACK);
+	res.SetResponseMessage(msg);
+
+	//std::vector<Argument*> args= req.GetArguments();
+	//if(req.HasArguments()) res.CopyArguments(args);
+
+	if(!res.Validate()){
+		cerr<<"MessageUtils::MakeErrorResponse(): ERROR: Invalid response object created!"<<endl;
+		return -1;
+	}
+
+	return 0;
+
+}//close MakeErrorResponse()
+
+int MessageUtils::MakeErrorResponse(std::string& jsonString,Request& req,std::string lmc_id,std::string msg){
+
+	Response res;
+	if(MakeErrorResponse(res,req,lmc_id,msg)<0){
+		cerr<<"MessageUtils::MakeErrorResponse(): ERROR: Failed to encode response to Response!"<<endl;	
+		return -1;
+	}
+	res.Print();
+
+	if(res.GetJsonString(jsonString,true)<0){
+		cerr<<"MessageUtils::MakeErrorResponse(): ERROR: Failed to encode response to json string!"<<endl;
+		return -1;
+	}
+
+	return 0;
+
+}//close MakeErrorResponse()
 
 int MessageUtils::MakeEchoResponse(Response& res,Request& req,std::string lmc_id,std::string msg){
 
