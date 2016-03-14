@@ -147,6 +147,25 @@ public:
 	 */
 	virtual Tango::DevString echo(Tango::DevString argin);
 	virtual bool is_echo_allowed(const CORBA::Any &any);
+	/**
+	 *	Command Revoke related method
+	 *	Description: Revoke a command from the scheduler queue
+	 *
+	 *	@param argin Arguments
+	 *               [0]: RevokeCmdId
+	 *	@returns 
+	 */
+	virtual Tango::DevString revoke(Tango::DevString argin);
+	virtual bool is_Revoke_allowed(const CORBA::Any &any);
+	/**
+	 *	Command FlushCommandQueue related method
+	 *	Description: Flush the command queue
+	 *
+	 *	@param argin 
+	 *	@returns 
+	 */
+	virtual Tango::DevString flush_command_queue(Tango::DevString argin);
+	virtual bool is_FlushCommandQueue_allowed(const CORBA::Any &any);
 
 
 	//--------------------------------------------------------
@@ -160,6 +179,13 @@ public:
 /*----- PROTECTED REGION ID(LMCInterface::Additional Method prototypes) ENABLED START -----*/
 
 //	Additional Method prototypes
+
+	protected:
+		void InitDevices();
+
+	protected:
+		Tango::DeviceProxy* m_SchedulerDeviceProxy;
+		
 
 /*----- PROTECTED REGION END -----*/	//	LMCInterface::Additional Method prototypes
 };

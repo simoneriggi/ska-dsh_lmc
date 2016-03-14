@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ASCII"?>
 <pogoDsl:PogoSystem xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:pogoDsl="http://www.esrf.fr/tango/pogo/PogoDsl">
   <classes name="LMCInterface" pogoRevision="9.1">
-    <description description="Device class implementing LMC-TM interface" title="LMC interface" sourcePath="/home/riggi/Analysis/TANGOProjects/SKA_DSH_LMC/trunk/ITM/LMCInterface" language="Cpp" filestogenerate="XMI   file,Code files,Protected Regions" license="GPL" copyright="" hasMandatoryProperty="false" hasConcreteProperty="false" hasAbstractCommand="false" hasAbstractAttribute="false">
+    <description description="Device class implementing LMC-TM interface" title="LMC interface" sourcePath="/home/riggi/Analysis/SKAProjects/ska-dsh_lmc/src/devices/ITM/LMCInterface" language="Cpp" filestogenerate="XMI   file,Code files,Protected Regions" license="GPL" copyright="" hasMandatoryProperty="false" hasConcreteProperty="false" hasAbstractCommand="false" hasAbstractAttribute="false">
       <inheritances classname="Device_Impl" sourcePath=""/>
       <inheritances classname="BaseDevice" sourcePath="../../Core/BaseDevice"/>
       <identification contact="at gmail.com - simone.riggi" author="simone.riggi" emailDomain="gmail.com" classFamily="SoftwareSystem" siteSpecific="" platform="Unix Like" bus="Not Applicable" manufacturer="none" reference=""/>
@@ -25,6 +25,24 @@
       <status abstract="true" inherited="true" concrete="true"/>
     </commands>
     <commands name="echo" description="A dummy echo command for testing purpose" execMethod="echo" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="">
+        <type xsi:type="pogoDsl:StringType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:StringType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="Revoke" description="Revoke a command from the scheduler queue" execMethod="revoke" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="Arguments&#xA;[0]: RevokeCmdId">
+        <type xsi:type="pogoDsl:StringType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:StringType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="FlushCommandQueue" description="Flush the command queue" execMethod="flush_command_queue" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
       <argin description="">
         <type xsi:type="pogoDsl:StringType"/>
       </argin>

@@ -177,6 +177,44 @@ CORBA::Any *echoClass::execute(Tango::DeviceImpl *device, const CORBA::Any &in_a
 	return insert((static_cast<LMCInterface *>(device))->echo(argin));
 }
 
+//--------------------------------------------------------
+/**
+ * method : 		RevokeClass::execute()
+ * description : 	method to trigger the execution of the command.
+ *
+ * @param	device	The device on which the command must be executed
+ * @param	in_any	The command input data
+ *
+ *	returns The command output data (packed in the Any object)
+ */
+//--------------------------------------------------------
+CORBA::Any *RevokeClass::execute(Tango::DeviceImpl *device, const CORBA::Any &in_any)
+{
+	cout2 << "RevokeClass::execute(): arrived" << endl;
+	Tango::DevString argin;
+	extract(in_any, argin);
+	return insert((static_cast<LMCInterface *>(device))->revoke(argin));
+}
+
+//--------------------------------------------------------
+/**
+ * method : 		FlushCommandQueueClass::execute()
+ * description : 	method to trigger the execution of the command.
+ *
+ * @param	device	The device on which the command must be executed
+ * @param	in_any	The command input data
+ *
+ *	returns The command output data (packed in the Any object)
+ */
+//--------------------------------------------------------
+CORBA::Any *FlushCommandQueueClass::execute(Tango::DeviceImpl *device, const CORBA::Any &in_any)
+{
+	cout2 << "FlushCommandQueueClass::execute(): arrived" << endl;
+	Tango::DevString argin;
+	extract(in_any, argin);
+	return insert((static_cast<LMCInterface *>(device))->flush_command_queue(argin));
+}
+
 
 //===================================================================
 //	Properties management
@@ -509,6 +547,24 @@ void LMCInterfaceClass::command_factory()
 			"",
 			Tango::OPERATOR);
 	command_list.push_back(pechoCmd);
+
+	//	Command Revoke
+	RevokeClass	*pRevokeCmd =
+		new RevokeClass("Revoke",
+			Tango::DEV_STRING, Tango::DEV_STRING,
+			"Arguments\n[0]: RevokeCmdId",
+			"",
+			Tango::OPERATOR);
+	command_list.push_back(pRevokeCmd);
+
+	//	Command FlushCommandQueue
+	FlushCommandQueueClass	*pFlushCommandQueueCmd =
+		new FlushCommandQueueClass("FlushCommandQueue",
+			Tango::DEV_STRING, Tango::DEV_STRING,
+			"",
+			"",
+			Tango::OPERATOR);
+	command_list.push_back(pFlushCommandQueueCmd);
 
 	/*----- PROTECTED REGION ID(LMCInterfaceClass::command_factory_after) ENABLED START -----*/
 	

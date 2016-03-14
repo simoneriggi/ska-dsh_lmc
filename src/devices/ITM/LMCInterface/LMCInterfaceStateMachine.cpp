@@ -70,6 +70,36 @@ bool LMCInterface::is_echo_allowed(TANGO_UNUSED(const CORBA::Any &any))
 	return true;
 }
 
+//--------------------------------------------------------
+/**
+ *	Method      : LMCInterface::is_Revoke_allowed()
+ *	Description : Execution allowed for Revoke attribute
+ */
+//--------------------------------------------------------
+bool LMCInterface::is_Revoke_allowed(TANGO_UNUSED(const CORBA::Any &any))
+{
+	//	Not any excluded states for Revoke command.
+	/*----- PROTECTED REGION ID(LMCInterface::RevokeStateAllowed) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	LMCInterface::RevokeStateAllowed
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : LMCInterface::is_FlushCommandQueue_allowed()
+ *	Description : Execution allowed for FlushCommandQueue attribute
+ */
+//--------------------------------------------------------
+bool LMCInterface::is_FlushCommandQueue_allowed(TANGO_UNUSED(const CORBA::Any &any))
+{
+	//	Not any excluded states for FlushCommandQueue command.
+	/*----- PROTECTED REGION ID(LMCInterface::FlushCommandQueueStateAllowed) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	LMCInterface::FlushCommandQueueStateAllowed
+	return true;
+}
+
 
 /*----- PROTECTED REGION ID(LMCInterface::LMCInterfaceStateAllowed.AdditionalMethods) ENABLED START -----*/
 

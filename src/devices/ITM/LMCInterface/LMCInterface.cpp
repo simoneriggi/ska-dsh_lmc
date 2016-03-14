@@ -56,11 +56,13 @@ static const char *RcsId = "$Id:  $";
 //  The following table gives the correspondence
 //  between command and method names.
 //
-//  Command name  |  Method name
+//  Command name       |  Method name
 //================================================================
-//  State         |  Inherited (no method)
-//  Status        |  Inherited (no method)
-//  echo          |  echo
+//  State              |  Inherited (no method)
+//  Status             |  Inherited (no method)
+//  echo               |  echo
+//  Revoke             |  revoke
+//  FlushCommandQueue  |  flush_command_queue
 //================================================================
 
 //================================================================
@@ -160,6 +162,8 @@ void LMCInterface::init_device()
 	/*----- PROTECTED REGION ID(LMCInterface::init_device) ENABLED START -----*/
 	
 	//	Initialize device
+	//## Initialize device proxies
+	InitDevices();
 	
 	/*----- PROTECTED REGION END -----*/	//	LMCInterface::init_device
 }
@@ -269,6 +273,108 @@ Tango::DevString LMCInterface::echo(Tango::DevString argin)
 }
 //--------------------------------------------------------
 /**
+ *	Command Revoke related method
+ *	Description: Revoke a command from the scheduler queue
+ *
+ *	@param argin Arguments
+ *               [0]: RevokeCmdId
+ *	@returns 
+ */
+//--------------------------------------------------------
+Tango::DevString LMCInterface::revoke(Tango::DevString argin)
+{
+	Tango::DevString argout;
+	DEBUG_STREAM << "LMCInterface::Revoke()  - " << device_name << endl;
+	/*----- PROTECTED REGION ID(LMCInterface::revoke) ENABLED START -----*/
+	
+	//	Add your own code
+	std::string cmd_argin= std::string(argin);	
+	std::string device_name= this->get_name();
+	std::string response= "";
+
+	//============================
+	//==   PARSE REQUEST
+	//============================
+	MessageParser_ns::Request req;
+	std::string lmc_id= device_name;
+	
+	if(req.Parse(cmd_argin)<0){
+		WARN_STREAM<<"LMCInterface::Revoke(): WARN: Invalid request message format given!"<<endl;
+		MessageParser_ns::MessageUtils::MakeErrorResponse(response,req,lmc_id,"Invalid request message format given!");
+		argout= CORBA::string_dup(response.c_str());
+		return argout;
+	}	
+	
+	//Check if mandatory commandID to be revoked is given	
+	int arg_index= -1;
+	if(!req.FindArgument(arg_index,"revokeCmdID")){
+		WARN_STREAM<<"LMCInterface::Revoke(): WARN: Invalid request message given (missing args)!"<<endl;
+		MessageParser_ns::MessageUtils::MakeErrorResponse(response,req,lmc_id,"Invalid request message given (missing args)!");
+		argout= CORBA::string_dup(response.c_str());
+		return argout;
+	}
+
+	MessageParser_ns::ArgumentImpl<std::string>* revokeCmdIDArg= static_cast<MessageParser_ns::ArgumentImpl<std::string>*>(req.GetArgument(arg_index));
+	std::string revokeCmdID= revokeCmdIDArg->value;
+
+	//Revoking command in the scheduler
+	DEBUG_STREAM<<"LMCInterface::Revoke(): INFO: Rekoving command: "<<revokeCmdID<<endl;
+	
+	Tango::DeviceData din;
+	Tango::DeviceData dout;
+	const Tango::DevVarLongStringArray* cmd_argout= 0;
+	try{
+		din << revokeCmdID;
+		dout= m_SchedulerDeviceProxy->command_inout("RevokeTask",din);
+		dout >> cmd_argout;
+	}	
+	catch(Tango::DevFailed& e){
+		Tango::Except::print_exception(e);
+		ERROR_STREAM<<"LMCInterface::Revoke(): ERROR: Failed to execute command!"<<endl;
+		MessageParser_ns::MessageUtils::MakeErrorResponse(response,req,lmc_id,"Failed to execute command!");
+		argout= CORBA::string_dup(response.c_str());
+		return argout;
+	}
+
+	//Getting cmd result
+	int res_ack= (cmd_argout->lvalue)[0];
+	std::string res_msg= std::string( (cmd_argout->svalue)[0] );
+	if(res_ack!=0){
+		INFO_STREAM<<"LMCInterface::Revoke(): INFO: Command execution failed on device (status="<<res_msg<<")!"<<endl;
+		MessageParser_ns::MessageUtils::MakeErrorResponse(response,req,lmc_id,"Command execution failed on device!");
+		argout= CORBA::string_dup(response.c_str());
+		return argout;
+	}	
+	
+	//Set response
+	MessageParser_ns::MessageUtils::MakeSuccessResponse(response,req,lmc_id,"Command executed with success");
+	argout= CORBA::string_dup(response.c_str());
+	
+	/*----- PROTECTED REGION END -----*/	//	LMCInterface::revoke
+	return argout;
+}
+//--------------------------------------------------------
+/**
+ *	Command FlushCommandQueue related method
+ *	Description: Flush the command queue
+ *
+ *	@param argin 
+ *	@returns 
+ */
+//--------------------------------------------------------
+Tango::DevString LMCInterface::flush_command_queue(Tango::DevString argin)
+{
+	Tango::DevString argout;
+	DEBUG_STREAM << "LMCInterface::FlushCommandQueue()  - " << device_name << endl;
+	/*----- PROTECTED REGION ID(LMCInterface::flush_command_queue) ENABLED START -----*/
+	
+	//	Add your own code
+	
+	/*----- PROTECTED REGION END -----*/	//	LMCInterface::flush_command_queue
+	return argout;
+}
+//--------------------------------------------------------
+/**
  *	Method      : LMCInterface::add_dynamic_commands()
  *	Description : Create the dynamic commands if any
  *                for specified device.
@@ -286,6 +392,26 @@ void LMCInterface::add_dynamic_commands()
 /*----- PROTECTED REGION ID(LMCInterface::namespace_ending) ENABLED START -----*/
 
 //	Additional Methods
+
+void LMCInterface::InitDevices(){
+
+	//## Init scheduler
+	m_SchedulerDeviceProxy= 0;
+	std::string scheduler_addr= "DSHLMC/Scheduler/id1";
+	try {
+		m_SchedulerDeviceProxy= new Tango::DeviceProxy(scheduler_addr.c_str());
+	}
+	catch(Tango::DevFailed& e){
+		WARN_STREAM<<"LMCInterface::InitDevices(): WARN: Failed to connect to scheduler device ("<<scheduler_addr<<")"<<endl;
+	}
+	catch(...){
+		WARN_STREAM<<"LMCInterface::InitDevices(): WARN: Unknown exception while connecting to scheduler device ("<<scheduler_addr<<")"<<endl;	
+	}
+
+	//## Init configurator
+	//...
+	
+}//close InitDevices()
 
 /*----- PROTECTED REGION END -----*/	//	LMCInterface::namespace_ending
 } //	namespace

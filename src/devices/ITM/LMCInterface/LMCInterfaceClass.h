@@ -83,6 +83,52 @@ public:
 	{return (static_cast<LMCInterface *>(dev))->is_echo_allowed(any);}
 };
 
+//	Command Revoke class definition
+class RevokeClass : public Tango::Command
+{
+public:
+	RevokeClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out,
+				   const char        *in_desc,
+				   const char        *out_desc,
+				   Tango::DispLevel  level)
+	:Command(name,in,out,in_desc,out_desc, level)	{};
+
+	RevokeClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out)
+	:Command(name,in,out)	{};
+	~RevokeClass() {};
+	
+	virtual CORBA::Any *execute (Tango::DeviceImpl *dev, const CORBA::Any &any);
+	virtual bool is_allowed (Tango::DeviceImpl *dev, const CORBA::Any &any)
+	{return (static_cast<LMCInterface *>(dev))->is_Revoke_allowed(any);}
+};
+
+//	Command FlushCommandQueue class definition
+class FlushCommandQueueClass : public Tango::Command
+{
+public:
+	FlushCommandQueueClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out,
+				   const char        *in_desc,
+				   const char        *out_desc,
+				   Tango::DispLevel  level)
+	:Command(name,in,out,in_desc,out_desc, level)	{};
+
+	FlushCommandQueueClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out)
+	:Command(name,in,out)	{};
+	~FlushCommandQueueClass() {};
+	
+	virtual CORBA::Any *execute (Tango::DeviceImpl *dev, const CORBA::Any &any);
+	virtual bool is_allowed (Tango::DeviceImpl *dev, const CORBA::Any &any)
+	{return (static_cast<LMCInterface *>(dev))->is_FlushCommandQueue_allowed(any);}
+};
+
 
 /**
  *	The LMCInterfaceClass singleton definition
