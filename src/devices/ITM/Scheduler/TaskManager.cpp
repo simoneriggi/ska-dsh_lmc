@@ -89,7 +89,7 @@ int TaskManager::AddTask(Task& task){
 	
 	//Emit signal to wake up any the waiting thread
 	m_wakeUpSignal = true;
-  m_cond.notify_one();//m_cond.notify_all();
+  m_cond.notify_all();
 
 	return 0;
 
@@ -100,7 +100,8 @@ void TaskManager::WakeUp(){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	DEBUG_STREAM<<"TaskManager::WakeUp(): INFO: Wake up signal throw..."<<endl;
 	m_wakeUpSignal = true;
-  m_cond.notify_one();
+  //m_cond.notify_one();
+	m_cond.notify_all();
 	DEBUG_STREAM<<"TaskManager::WakeUp(): INFO: done!"<<endl;
 	
 }//close WakeUp()
@@ -110,7 +111,8 @@ void TaskManager::End(){
 	std::lock_guard<std::mutex> lock(m_mutex);
 	DEBUG_STREAM<<"TaskManager::End(): INFO: End signal throw..."<<endl;
 	m_endSignal = true;
-  m_cond.notify_one();
+  //m_cond.notify_one();
+	m_cond.notify_all();
 	DEBUG_STREAM<<"TaskManager::End(): INFO: done!"<<endl;
 	
 }//close End()

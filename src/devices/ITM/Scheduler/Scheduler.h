@@ -58,6 +58,7 @@ namespace Scheduler_ns
 
 //	Additional Class Declarations
 	class SchedulerThread;
+	class MonitorThread;
 	class TaskCallBack;
 	class TaskManager;
 	class TaskManagerThread;
@@ -305,6 +306,7 @@ public:
 			
 	protected:
 		SchedulerThread* m_SchedulerThread;
+		MonitorThread* m_MonitorThread;
 		bool m_StopThreadFlag;
 	
 		omni_mutex* m_mutex;

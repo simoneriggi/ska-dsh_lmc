@@ -47,10 +47,15 @@ SchedulerThread::SchedulerThread(Scheduler* dev) : Tango::LogAdapter(dev), m_thr
 }//close constructor
     
 SchedulerThread::~SchedulerThread(){
-
-	m_stopThread = true;
+	
+	DEBUG_STREAM<<"SchedulerThread::~SchedulerThread(): INFO: Deleting scheduler thread..."<<endl;
+	//{
+  //	std::lock_guard<std::mutex> lock( mutex );
+    m_stopThread = true;
+  //}
   if(m_thread.joinable()) m_thread.join();
-
+	DEBUG_STREAM<<"SchedulerThread::~SchedulerThread(): INFO: done!"<<endl;
+	
 }//close destructor
 
 
@@ -61,15 +66,22 @@ void SchedulerThread::Run(){
 	Task task;
 
 	while(!m_stopThread){
-    DEBUG_STREAM<<"SchedulerThread::Run(): INFO: Scheduler thread looping..."<<endl;
+    DEBUG_STREAM<<"SchedulerThread::Run(): INFO: Scheduler thread looping (exit? "<<m_stopThread<<")..."<<endl;
+		if(m_stopThread){
+			DEBUG_STREAM<<"SchedulerThread::Run(): INFO: Exit from infinite loop..."<<endl;
+			break;
+		}
 
 		//Pop task	
 		if( (device->m_TaskManager)->PopTask(task)<0 ) continue;
   
 		//Execute task
 		if( (device->m_TaskManager)->ExecuteTask(task)<0 ) continue;
+
   }//end infinite loop
     
+	DEBUG_STREAM<<"SchedulerThread::Run(): INFO: End thread run."<<endl;
+
 }//close Run()
 
 
@@ -86,20 +98,29 @@ MonitorThread::MonitorThread(Scheduler* dev) : Tango::LogAdapter(dev), m_thread(
     
 MonitorThread::~MonitorThread(){
 
-	m_stopThread = true;
+	DEBUG_STREAM<<"MonitorThread::~MonitorThread(): INFO: Deleting monitor thread..."<<endl;
+	//{
+  //	std::lock_guard<std::mutex> lock( mutex );
+    m_stopThread = true;
+  //}
   if(m_thread.joinable()) m_thread.join();
-
+	DEBUG_STREAM<<"MonitorThread::~MonitorThread(): INFO: done!"<<endl;
+	
 }//close destructor
 
 
 void MonitorThread::Run(){
     
-	INFO_STREAM << "MonitorThread::Run(): INFO: Starting dispatcher thread..."<<endl;
+	INFO_STREAM << "MonitorThread::Run(): INFO: Starting monitor thread..."<<endl;
 	 
 	Task task;
 
 	while(!m_stopThread){
-    DEBUG_STREAM<<"MonitorThread::Run(): INFO: Monitor thread looping..."<<endl;
+    DEBUG_STREAM<<"MonitorThread::Run(): INFO: Monitor thread looping (exit? "<<m_stopThread<<")..."<<endl;
+		if(m_stopThread){
+			DEBUG_STREAM<<"MonitorThread::Run(): INFO: Exit from infinite loop..."<<endl;
+			break;
+		}
 
 		//Pop task	
 		if( (device->m_TaskManager)->PopMonitorTask(task)<0 ) continue;
@@ -109,8 +130,12 @@ void MonitorThread::Run(){
 			ERROR_STREAM<<"MonitorThread::Run(): ERROR: Failed to set task status!"<<endl;
 			continue;
 		}
+
+
   }//end infinite loop
     
+	DEBUG_STREAM<<"MonitorThread::Run(): INFO: End thread run."<<endl;
+
 }//close Run()
 
 }//close namespace 

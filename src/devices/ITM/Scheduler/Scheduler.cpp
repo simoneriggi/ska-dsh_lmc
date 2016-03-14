@@ -142,10 +142,21 @@ void Scheduler::delete_device()
 	
 	//## Waits for an existing thread to finish
 	if(m_SchedulerThread){
-		DEBUG_STREAM << "Scheduler::delete_device(): DEBUG: Shutting down scheduler thread..." << endl;	
 		if(m_TaskManager) m_TaskManager->End();
+		DEBUG_STREAM << "Scheduler::delete_device(): DEBUG: Shutting down scheduler thread..." << endl;	
+		m_SchedulerThread->Stop();
 		delete m_SchedulerThread;
 		m_SchedulerThread = 0;
+		DEBUG_STREAM << "Scheduler::delete_device(): DEBUG: done!" << endl;	
+	}
+
+	if(m_MonitorThread){
+		if(m_TaskManager) m_TaskManager->End();
+		DEBUG_STREAM << "Scheduler::delete_device(): DEBUG: Shutting down monitor thread..." << endl;			
+		m_MonitorThread->Stop();
+		delete m_MonitorThread;
+		m_MonitorThread = 0;
+		DEBUG_STREAM << "Scheduler::delete_device(): DEBUG: done!" << endl;
 	}
 
 
@@ -908,7 +919,7 @@ Tango::DevVarLongStringArray *Scheduler::revoke_task(Tango::DevString argin)
 
 	//Removing task from the  task queue
 	if(m_TaskManager->RemoveTask(argin)<0){
-		ERROR_STREAM<<"Scheduler::RevokeTask(): ERROR: Failed to remove task from the task queue!"<<endl;
+		ERROR_STREAM<<"Scheduler::RevokeTask(): ERROR: Failed to remove task "<<argin<<" from the task queue!"<<endl;
 		ack= -1;
 		reply= "Failed to remove task from the task queue";
 		argout->lvalue[0]= ack;
@@ -1078,6 +1089,10 @@ void Scheduler::Init(){
 	m_SchedulerThread= 0;
   m_SchedulerThread = new SchedulerThread(this);
   m_SchedulerThread->Start();
+
+	m_MonitorThread= 0;
+  m_MonitorThread = new MonitorThread(this);
+  m_MonitorThread->Start();
 
 }//close Init() 
 

@@ -5,6 +5,9 @@
 #include <tango.h>
 
 #include <thread>
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
 
 namespace Scheduler_ns {
   
@@ -25,14 +28,27 @@ class SchedulerThread : public Tango::LogAdapter {
     	m_thread = std::thread(&SchedulerThread::Run,this);
     }
 		
+		/** 
+		\brief Stop
+ 		*/
+		void Stop(){
+			DEBUG_STREAM<<"SchedulerThread::Stop(): INFO: Called Stop()..."<<endl;
+			std::lock_guard<std::mutex> lock( m_mutex );
+			m_stopThread = true;
+			DEBUG_STREAM<<"SchedulerThread::Stop(): INFO: done!"<<endl;
+		}
+
 	private:
 		/** 
 		\brief Main thread function 
  		*/
 		void Run();
+
+		
 		
 	private:	
-		bool m_stopThread;
+		mutable std::mutex m_mutex;	
+		std::atomic<bool> m_stopThread;
 		Scheduler* device;	
 		log4tango::Logger* m_logger;
     std::thread m_thread;
@@ -53,21 +69,29 @@ class MonitorThread : public Tango::LogAdapter {
 		void Start(){
     	m_thread = std::thread(&MonitorThread::Run,this);
     }
-		
+		/** 
+		\brief Stop
+ 		*/
+		void Stop(){
+			DEBUG_STREAM<<"MonitorThread::Stop(): INFO: Called Stop()..."<<endl;
+			std::lock_guard<std::mutex> lock( m_mutex );
+			m_stopThread = true;
+			DEBUG_STREAM<<"MonitorThread::Stop(): INFO: done!"<<endl;
+		}
+
 	private:
 		/** 
 		\brief Main thread function 
  		*/
 		void Run();
 		
-	private:	
-		bool m_stopThread;
+	private:
+		mutable std::mutex m_mutex;	
+		std::atomic<bool> m_stopThread;
 		Scheduler* device;	
 		log4tango::Logger* m_logger;
     std::thread m_thread;
-		
 	
-
 };//close MonitorThread class
 
 }//close namespace

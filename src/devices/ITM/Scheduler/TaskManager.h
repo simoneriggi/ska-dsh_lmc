@@ -635,13 +635,15 @@ class TaskManager : public Tango::LogAdapter {
 		\brief Print tasks in list
  		*/
 		void PrintTasks(){
-			std::unique_lock<std::mutex> mlock(m_mutex);
+			//std::unique_lock<std::mutex> mlock(m_mutex);
+			std::lock_guard<std::mutex> lock(m_mutex);
 			Tasks& task_list= m_tasks.GetTasks();
 			INFO_STREAM<<"TaskManager::PrintTasks(): INFO: "<<task_list.size()<<" tasks present in collection"<<endl;
 			for(unsigned int i=0;i<task_list.size();i++){
 				std::string thisTaskString= task_list[i].GetPrintableString();
 				INFO_STREAM<<"TaskManager::PrintTasks(): INFO: "<<thisTaskString<<endl;
 			}
+			return;
 		}
 
 		/** 
@@ -753,12 +755,15 @@ class TaskManager : public Tango::LogAdapter {
 		int RemoveTaskFromMonitorQueue(std::string cmd_id){
 			if(m_monitorQueue.empty() ) return 0;		
 			std::set<Task>::iterator it= std::find_if(m_monitorQueue.begin(),m_monitorQueue.end(),MatchTaskById(cmd_id));
-			if(it==m_monitorQueue.end()) return -1;			
+			if(it==m_monitorQueue.end()) {
+				WARN_STREAM<<"TaskManager::RemoveTaskFromMonitorQueue(): WARN: Cannot find task id "<<cmd_id<<" in monitor queue!"<<endl;
+				return -1;			
+			}
 			try {
 				m_monitorQueue.erase(it);
 			}
 			catch(...){
-				WARN_STREAM<<"TaskManager::RemoveTaskFromMonitorQueue(): ERROR: Exception while deleting task from queue!"<<endl;
+				WARN_STREAM<<"TaskManager::RemoveTaskFromMonitorQueue(): ERROR: Exception while deleting task from monitor queue!"<<endl;
 				return -1;
 			}
 			return 0;
