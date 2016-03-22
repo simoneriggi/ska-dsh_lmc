@@ -76,6 +76,14 @@ MARK_AS_ADVANCED (TANGO_INCLUDE_DIR TANGO_LIBRARIES)
 MESSAGE(STATUS "TANGO_INCLUDE_DIR: ${TANGO_INCLUDE_DIR}")
 MESSAGE(STATUS "TANGO_LIBRARIES: ${TANGO_LIBRARIES}")
 
+#==================================
+#== Check for BOOST             ===
+#==================================
+find_package(Boost REQUIRED COMPONENTS filesystem system regex)
+message (STATUS "BOOST HEADERS: ${Boost_INCLUDE_DIRS}, LIBS: ${Boost_LIBRARIES}")
+#-------------------------
+
+
 
 #==================================
 #==   Check for JSONCPP         ===

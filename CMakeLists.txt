@@ -84,6 +84,7 @@ list (APPEND INCLUDE_DIRS ${ZMQ_INCLUDE_DIR})
 list (APPEND INCLUDE_DIRS ${TANGO_INCLUDE_DIR})
 list (APPEND INCLUDE_DIRS ${JSONCPP_INCLUDE_DIR})
 list (APPEND INCLUDE_DIRS ${PUGIXML_INCLUDE_DIR})
+list (APPEND INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
 include_directories(${INCLUDE_DIRS})
 
 # Append external libs found 
@@ -92,6 +93,7 @@ list (APPEND LINKED_LIBS ${ZMQ_LIBRARIES})
 list (APPEND LINKED_LIBS ${TANGO_LIBRARIES})
 list (APPEND LINKED_LIBS ${JSONCPP_LIBRARIES})
 list (APPEND LINKED_LIBS ${PUGIXML_LIBRARIES})
+list (APPEND LINKED_LIBS ${Boost_LIBRARIES})
 message (STATUS "LINKED_LIBS: ${LINKED_LIBS}")
 
 
@@ -104,11 +106,6 @@ set(BaseDevice_DOWNLOAD_DIR ${BaseDevice_DIR})
 set(BaseDevice_DOWNLOAD_DEST_DIR ${DEVICE_BUILD_DIR}/Core)
 set(BaseDevice_BUILD_DIR ${DEVICE_BUILD_DIR}/Core/BaseDevice)
 set(BaseDevice_EXE ${BaseDevice_BUILD_DIR}/bin/BaseDevice)
-#message(STATUS "BaseDevice_DIR: ${BaseDevice_DIR}")
-#message(STATUS "BaseDevice_DOWNLOAD_DIR: ${BaseDevice_DOWNLOAD_DIR}")
-#message(STATUS "BaseDevice_DOWNLOAD_DEST_DIR: ${BaseDevice_DOWNLOAD_DEST_DIR}")
-#message(STATUS "BaseDevice_BUILD_DIR: ${BaseDevice_BUILD_DIR}")
-#message(STATUS "BaseDevice_EXE: ${BaseDevice_EXE}")
 
 #-- LMCInterface
 set(LMCInterface_DIR ${DEVICE_SRC_DIR}/ITM/LMCInterface)
@@ -143,30 +140,70 @@ set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${ADDITIONAL_CL
 #-----------------------------------------------------------------------------------------------
 #---  BUILD PROJECT SHARED LIBS
 #-----------------------------------------------------------------------------------------------
-#--- Create Utils shared lib
+#--- UTILS LIBS ----
 add_library(Utils SHARED ${UTILS_SRCS})
 target_link_libraries(Utils PUBLIC ${LINKED_LIBS})
 
-#--- Create MessageParser shared lib
 add_library(MessageParser SHARED ${MSGPARSER_SRCS})
 add_dependencies(MessageParser Utils)
 target_link_libraries(MessageParser PUBLIC ${LINKED_LIBS} Utils)
 
-#--- Create SDD shared lib
 add_library(SDD SHARED ${SDD_SRCS})
-#add_dependencies(SDD Utils)
-target_link_libraries(SDD PUBLIC ${LINKED_LIBS})
+add_dependencies(SDD Utils)
+target_link_libraries(SDD PUBLIC ${LINKED_LIBS} Utils)
+#---------------------
 
-#--- Create BaseDevice shared lib
+
+#--- CORE LIBS -----
 add_library(BaseDevice SHARED ${BaseDevice_SRCS})
-target_link_libraries(BaseDevice PUBLIC ${LINKED_LIBS})
+add_dependencies(BaseDevice Utils MessageParser SDD)
+target_link_libraries(BaseDevice PUBLIC ${LINKED_LIBS} Utils MessageParser SDD)
+#-------------------
 
-#--- Create LMCInterface shared lib
+#--- ITM LIBS -------
 add_library(LMCInterface SHARED ${LMCInterface_SRCS})
-add_dependencies(LMCInterface MessageParser Utils BaseDevice)
-target_link_libraries(LMCInterface PUBLIC ${LINKED_LIBS} MessageParser Utils BaseDevice)
+add_dependencies(LMCInterface Utils MessageParser SDD BaseDevice)
+target_link_libraries(LMCInterface PUBLIC ${LINKED_LIBS} Utils MessageParser SDD BaseDevice)
 
+add_library(Scheduler SHARED ${Scheduler_SRCS})
+add_dependencies(Scheduler Utils MessageParser SDD BaseDevice)
+target_link_libraries(Scheduler PUBLIC ${LINKED_LIBS} Utils MessageParser SDD BaseDevice)
+#--------------------
 
+#--- SEEmulators LIBS --------
+add_library(SEEmulatorBase SHARED ${SEEmulatorBase_SRCS})
+add_dependencies(SEEmulatorBase Utils MessageParser SDD BaseDevice)
+target_link_libraries(SEEmulatorBase PUBLIC ${LINKED_LIBS})
+
+add_library(RxEmulator SHARED ${RxEmulator_SRCS})
+add_dependencies(RxEmulator Utils MessageParser SDD SEEmulatorBase)
+target_link_libraries(RxEmulator PUBLIC ${LINKED_LIBS} Utils MessageParser SDD SEEmulatorBase)
+
+add_library(SPFEmulator SHARED ${SPFEmulator_SRCS})
+add_dependencies(SPFEmulator Utils MessageParser SDD SEEmulatorBase)
+target_link_libraries(SPFEmulator PUBLIC ${LINKED_LIBS} Utils MessageParser SDD SEEmulatorBase)
+
+add_library(DSEmulator SHARED ${DSEmulator_SRCS})
+add_dependencies(DSEmulator Utils MessageParser SDD SEEmulatorBase)
+target_link_libraries(DSEmulator PUBLIC ${LINKED_LIBS} Utils MessageParser SDD SEEmulatorBase)
+
+add_library(TMEmulator SHARED ${TMEmulator_SRCS})
+add_dependencies(TMEmulator Utils MessageParser SDD BaseDevice)
+target_link_libraries(TMEmulator PUBLIC ${LINKED_LIBS})
+#-----------------------------
+
+#--- MONITORING LIBS --------
+add_library(MoniDataAggregator SHARED ${MoniDataAggregator_SRCS})
+add_dependencies(MoniDataAggregator Utils MessageParser SDD BaseDevice)
+target_link_libraries(MoniDataAggregator PUBLIC ${LINKED_LIBS} Utils MessageParser SDD BaseDevice)
+
+add_library(LogConsumer SHARED ${LogConsumer_SRCS})
+add_dependencies(LogConsumer Utils MessageParser SDD BaseDevice)
+target_link_libraries(LogConsumer PUBLIC ${LINKED_LIBS} Utils MessageParser SDD BaseDevice)
+
+add_library(SelfMonitoring SHARED ${SelfMonitoring_SRCS})
+add_dependencies(SelfMonitoring Utils MessageParser SDD BaseDevice)
+target_link_libraries(SelfMonitoring PUBLIC ${LINKED_LIBS} Utils MessageParser SDD BaseDevice)
 #-----------------------------------------------------------------------------------------------
 
 
@@ -199,24 +236,75 @@ target_link_libraries(LMCInterface PUBLIC ${LINKED_LIBS} MessageParser Utils Bas
 #-----------------------------------------------------------------------------------------------
 #---  BUILD PROJECT TASKS EXEs
 #-----------------------------------------------------------------------------------------------
+
+###### CORE #########
 ## BaseDevice
 add_executable(BaseDeviceExe ${Main_BaseDevice_SRCS} ${BaseDevice_SRCS})
-target_link_libraries(BaseDeviceExe ${LINKED_LIBS})
+target_link_libraries(BaseDeviceExe Utils MessageParser SDD ${LINKED_LIBS})
 set_target_properties(BaseDeviceExe PROPERTIES OUTPUT_NAME BaseDevice)
+#####################
 
+###### ITM ##########
 ## LMCInterface 
 add_executable(LMCInterfaceExe ${Main_LMCInterface_SRCS} ${LMCInterface_SRCS})
-target_link_libraries(LMCInterfaceExe MessageParser Utils BaseDevice LMCInterface ${LINKED_LIBS})
+target_link_libraries(LMCInterfaceExe Utils MessageParser SDD BaseDevice LMCInterface ${LINKED_LIBS})
 set_target_properties(LMCInterfaceExe PROPERTIES OUTPUT_NAME LMCInterface)
 
+## Scheduler
+add_executable(SchedulerExe ${Main_Scheduler_SRCS} ${Scheduler_SRCS})
+target_link_libraries(SchedulerExe Utils MessageParser SDD BaseDevice Scheduler ${LINKED_LIBS})
+set_target_properties(SchedulerExe PROPERTIES OUTPUT_NAME Scheduler)
+#####################
+
+###### SEEmulators ######
+## SEEmulatorBase 
+add_executable(SEEmulatorBaseExe ${Main_SEEmulatorBase_SRCS} ${SEEmulatorBase_SRCS})
+target_link_libraries(SEEmulatorBaseExe ${LINKED_LIBS})
+set_target_properties(SEEmulatorBaseExe PROPERTIES OUTPUT_NAME SEEmulatorBase)
+
+## RxEmulator
+add_executable(RxEmulatorExe ${Main_RxEmulator_SRCS} ${RxEmulator_SRCS})
+target_link_libraries(RxEmulatorExe Utils MessageParser SDD SEEmulatorBase RxEmulator ${LINKED_LIBS})
+set_target_properties(RxEmulatorExe PROPERTIES OUTPUT_NAME RxEmulator)
+
+## SPFEmulator
+add_executable(SPFEmulatorExe ${Main_SPFEmulator_SRCS} ${SPFEmulator_SRCS})
+target_link_libraries(SPFEmulatorExe Utils MessageParser SDD SEEmulatorBase SPFEmulator ${LINKED_LIBS})
+set_target_properties(SPFEmulatorExe PROPERTIES OUTPUT_NAME SPFEmulator)
+
+## DSEmulator
+add_executable(DSEmulatorExe ${Main_DSEmulator_SRCS} ${DSEmulator_SRCS})
+target_link_libraries(DSEmulatorExe Utils MessageParser SDD SEEmulatorBase DSEmulator ${LINKED_LIBS})
+set_target_properties(DSEmulatorExe PROPERTIES OUTPUT_NAME DSEmulator)
+
+## TMEmulator
+add_executable(TMEmulatorExe ${Main_TMEmulator_SRCS} ${TMEmulator_SRCS})
+target_link_libraries(TMEmulatorExe ${LINKED_LIBS})
+set_target_properties(TMEmulatorExe PROPERTIES OUTPUT_NAME TMEmulator)
+#########################
+
+
+###### MONITORING ######
+## MoniDataAggregator
+add_executable(MoniDataAggregatorExe ${Main_MoniDataAggregator_SRCS} ${MoniDataAggregator_SRCS})
+target_link_libraries(MoniDataAggregatorExe Utils MessageParser SDD BaseDevice MoniDataAggregator ${LINKED_LIBS})
+set_target_properties(MoniDataAggregatorExe PROPERTIES OUTPUT_NAME MoniDataAggregator)
+
+## LogConsumer
+add_executable(LogConsumerExe ${Main_LogConsumer_SRCS} ${LogConsumer_SRCS})
+target_link_libraries(LogConsumerExe Utils MessageParser SDD BaseDevice LogConsumer ${LINKED_LIBS})
+set_target_properties(LogConsumerExe PROPERTIES OUTPUT_NAME LogConsumer)
+
+## SelfMonitoring
+add_executable(SelfMonitoringExe ${Main_SelfMonitoring_SRCS} ${SelfMonitoring_SRCS})
+target_link_libraries(SelfMonitoringExe Utils MessageParser SDD BaseDevice SelfMonitoring ${LINKED_LIBS})
+set_target_properties(SelfMonitoringExe PROPERTIES OUTPUT_NAME SelfMonitoring)
+
+#########################
 
 #-----------------------------------------------------------------------------------------------
 #---  INSTALL STUFF
 #-----------------------------------------------------------------------------------------------
-#-- INstall targets
-#install(TARGETS FindSource FindBkg DESTINATION ${BINARY_INSTALL_DIR} COMPONENT binaries)
-#install(TARGETS BaseDeviceExe DESTINATION ${BINARY_INSTALL_DIR} COMPONENT binaries)
-
 # -- Install library dict map
 install(FILES DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
