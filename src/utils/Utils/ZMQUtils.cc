@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <stdexcept>
 #include <map>
+#include <chrono>
 
 
 using namespace std;
@@ -27,6 +28,69 @@ ZMQUtils::ZMQUtils() {
 ZMQUtils::~ZMQUtils(){
 
 }
+
+int ZMQUtils::sendrcv_message(std::vector<SBuffer>& recvBuffers,void* socket,SBuffer& sndBuffer,ZMQSendOptions SndOptions,ZMQRcvOptions RcvOptions,int nMaxMsg,int poll_timeout,int read_timeout){
+
+	//Send message
+	if(send_message(socket,sndBuffer,SndOptions)<0){
+		cerr<<"ZMQUtils::sendrcv_message(): ERROR: Send failed!"<<endl;
+		return -1;
+	}
+	
+	//Receive message(s)
+	zmq_pollitem_t items[] = {
+  	{ socket, 0, ZMQ_POLLIN, 0 }
+  };
+	int errflag;
+	int nMsg= 0;
+
+	auto start = std::chrono::system_clock::now();
+
+	while(1) {
+		//Check end conditions
+		if(nMsg>=nMaxMsg) {
+			cout<<"ZMQUtils::sendrcv_message(): INFO: Max number of reply messages (n="<<nMsg<<") reached!"<<endl;
+			break;
+		}
+		auto now = std::chrono::system_clock::now();
+		auto tdiff = std::chrono::duration_cast<std::chrono::seconds>(now - start).count();
+		if(tdiff>=read_timeout) {
+			cerr<<"ZMQUtils::sendrcv_message(): WARN: Read timeout (timeout="<<read_timeout<<") exceeded!"<<endl;
+			break;
+		}
+
+		//Check if there are messages from main thread
+		int poll_status = zmq_poll (items, 1, poll_timeout*ZMQ_POLL_MSEC);
+    if (poll_status == -1) {//poll returns with error
+			cerr<<"ZMQUtils::sendrcv_message(): ERROR: Polling error ..."<<endl;     
+			if(errno==EINTR || errno==ETERM) {
+				cerr<<"ZMQUtils::sendrcv_message(): ERROR: EINTR/ETERM state..."<<endl;
+        return -1;
+      }
+      continue;
+    }
+
+		if (items[0].revents & ZMQ_POLLIN) {	
+			SBuffer recvBuffer= recv_message(socket,RcvOptions,errflag);
+      if(recvBuffer.data.empty() || recvBuffer.size==-1){
+        cerr<<"ZMQUtils::sendrcv_message(): WARN: Empty message received..."<<endl;
+    		continue;
+      }
+			cout<<"ZMQUtils::sendrcv_message(): recvBuffer: "<<recvBuffer.data<<endl;
+			recvBuffers.push_back(recvBuffer);
+			nMsg++;
+		}//close if
+	}//end loop
+
+	if(nMsg<=0) {
+		cerr<<"ZMQUtils::sendrcv_message(): WARN: No replies received from the socket!"<<endl;
+		return -1;
+	}
+
+	return 0;
+	
+}//close ZMQUtils::send_rcv()
+
 
 ZMQUtils::SBuffer ZMQUtils::recv_buffer(void* socket,int& errflag){
 	

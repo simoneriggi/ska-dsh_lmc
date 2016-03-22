@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="ASCII"?>
+<pogoDsl:PogoSystem xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:pogoDsl="http://www.esrf.fr/tango/pogo/PogoDsl">
+  <classes name="SelfMonitoring" pogoRevision="9.1">
+    <description description="Device server to perform host/service self-monitoring" title="SelfMonitoring" sourcePath="/home/riggi/Analysis/SKAProjects/ska-dsh_lmc/src/devices/Monitoring/SelfMonitoring" language="Cpp" filestogenerate="XMI   file,Code files,Protected Regions" license="GPL" copyright="" hasMandatoryProperty="false" hasConcreteProperty="true" hasAbstractCommand="false" hasAbstractAttribute="false">
+      <inheritances classname="Device_Impl" sourcePath=""/>
+      <inheritances classname="BaseDevice" sourcePath="../../Core/BaseDevice"/>
+      <identification contact="at gmail.com - simone.riggi" author="simone.riggi" emailDomain="gmail.com" classFamily="SoftwareSystem" siteSpecific="" platform="Unix Like" bus="Not Applicable" manufacturer="none" reference=""/>
+    </description>
+    <deviceProperties name="configFile" description="XML configuration file">
+      <type xsi:type="pogoDsl:StringType"/>
+      <status abstract="false" inherited="true" concrete="true"/>
+    </deviceProperties>
+    <deviceProperties name="nagios_query_handler" description="Address of Nagios Query Handler in filesystem">
+      <type xsi:type="pogoDsl:StringType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <DefaultPropValue>/var/nagios/rw/nagios.qh</DefaultPropValue>
+    </deviceProperties>
+    <commands name="State" description="This command gets the device state (stored in its device_state data member) and returns it to the caller." execMethod="dev_state" displayLevel="OPERATOR" polledPeriod="0">
+      <argin description="none">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="Device state">
+        <type xsi:type="pogoDsl:StateType"/>
+      </argout>
+      <status abstract="true" inherited="true" concrete="true"/>
+    </commands>
+    <commands name="Status" description="This command gets the device status (stored in its device_status data member) and returns it to the caller." execMethod="dev_status" displayLevel="OPERATOR" polledPeriod="0">
+      <argin description="none">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="Device status">
+        <type xsi:type="pogoDsl:ConstStringType"/>
+      </argout>
+      <status abstract="true" inherited="true" concrete="true"/>
+    </commands>
+    <commands name="DevConfigure" description="Configure device using the input configuration string" execMethod="dev_configure" displayLevel="OPERATOR" polledPeriod="0">
+      <argin description="A string with SDD configuration">
+        <type xsi:type="pogoDsl:StringType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="true" concrete="true"/>
+    </commands>
+    <commands name="RestoreDevConfig" description="Restore device configuration to the default" execMethod="restore_dev_config" displayLevel="OPERATOR" polledPeriod="0">
+      <argin description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="true" concrete="true"/>
+    </commands>
+    <commands name="RemoveAttr" description="Remove an attribute from the list" execMethod="remove_attr" displayLevel="OPERATOR" polledPeriod="0">
+      <argin description="Attr name">
+        <type xsi:type="pogoDsl:StringType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="true" concrete="true"/>
+    </commands>
+    <commands name="RemoveAttrs" description="Remove all attributes from the device" execMethod="remove_attrs" displayLevel="OPERATOR" polledPeriod="0">
+      <argin description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="true" concrete="true"/>
+    </commands>
+    <commands name="SubscribeAttr" description="Subscribe attribute to remote monitoring point" execMethod="subscribe_attr" displayLevel="OPERATOR" polledPeriod="0">
+      <argin description="">
+        <type xsi:type="pogoDsl:StringType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="true" concrete="true"/>
+    </commands>
+    <commands name="UnsubscribeAttr" description="Unsubscribe attr from remote monitoring point" execMethod="unsubscribe_attr" displayLevel="OPERATOR" polledPeriod="0">
+      <argin description="Attr name">
+        <type xsi:type="pogoDsl:StringType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="true" concrete="true"/>
+    </commands>
+    <commands name="SubscribeAttrs" description="Subscribe all attributes to remote monitoring points" execMethod="subscribe_attrs" displayLevel="OPERATOR" polledPeriod="0">
+      <argin description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="true" concrete="true"/>
+    </commands>
+    <commands name="UnsubscribeAttrs" description="Unsubscribe all attributes from remote monitoring points" execMethod="unsubscribe_attrs" displayLevel="OPERATOR" polledPeriod="0">
+      <argin description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="true" concrete="true"/>
+    </commands>
+    <commands name="SubscribeToServiceChecks" description="Subscribe to receive service checks from Nagios &#xA;NERD" execMethod="subscribe_to_service_checks" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="SubscribeToHostChecks" description="Subscribe to receive host checks from Nagios NERD" execMethod="subscribe_to_host_checks" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="UnsubscribeFromServiceChecks" description="Unsubscribe from Nagios service check channel" execMethod="unsubscribe_from_service_checks" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="UnsubscribeFromHostChecks" description="Unsubscribe from host check channel" execMethod="unsubscribe_from_host_checks" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="ListChannels" description="List available Nagios channels" execMethod="list_channels" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <attributes name="tmpAttr" attType="Scalar" rwType="READ_WRITE" displayLevel="OPERATOR" polledPeriod="0" maxX="" maxY="" memorized="true" allocReadMember="true">
+      <dataType xsi:type="pogoDsl:DoubleType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <status abstract="false" inherited="true" concrete="true"/>
+      <properties description="" label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <preferences docHome="./doc_html" makefileHome="/home/riggi/Software/TANGO/v9.1.0/share/pogo/preferences"/>
+  </classes>
+</pogoDsl:PogoSystem>

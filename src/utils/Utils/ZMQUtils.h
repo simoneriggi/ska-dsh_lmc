@@ -92,7 +92,7 @@ class ZMQUtils {
 		static SBuffer recv_message(void* socket,ZMQRcvOptions options,int& errflag);
 		static int send_buffer (void* socket,SBuffer buffer,bool sendmore=false);
 		static int send_message (void* socket,SBuffer buffer,ZMQSendOptions options);
-	
+		static int sendrcv_message(std::vector<SBuffer>& recvBuffers,void* socket,SBuffer& sndBuffer,ZMQSendOptions SndOptions,ZMQRcvOptions RcvOptions,int nMaxMsg=1,int poll_timeout=100,int read_timeout=1);
 		static int proxy(void* frontend,void* backend,std::string identity);
 
 	protected:
