@@ -51,6 +51,125 @@
 
 namespace SPFEmulator_ns
 {
+enum _spf_modeEnum {
+	_OFF,
+	_STARTUP,
+	_STANDBYminusLP,
+	_OPERATE,
+	_MAINTENANCE,
+	_ERROR,
+} ;
+typedef _spf_modeEnum spf_modeEnum;
+
+enum _spf_powerStateEnum {
+	_FULLminusPOWER,
+	_LOWminusPOWER,
+} ;
+typedef _spf_powerStateEnum spf_powerStateEnum;
+
+enum _b1_capabilityStateEnum {
+	_UNAVAILABLE,
+	_STANDBY,
+	_OPERATEminusDEGRADED,
+	_OPERATEminusFULL,
+} ;
+typedef _b1_capabilityStateEnum b1_capabilityStateEnum;
+
+enum _b2_capabilityStateEnum {
+	_UNAVAILABLE,
+	_STANDBY,
+	_OPERATEminusDEGRADED,
+	_OPERATEminusFULL,
+} ;
+typedef _b2_capabilityStateEnum b2_capabilityStateEnum;
+
+enum _b3_capabilityStateEnum {
+	_UNAVAILABLE,
+	_STANDBY,
+	_OPERATEminusDEGRADED,
+	_OPERATEminusFULL,
+} ;
+typedef _b3_capabilityStateEnum b3_capabilityStateEnum;
+
+enum _b4_capabilityStateEnum {
+	_UNAVAILABLE,
+	_STANDBY,
+	_OPERATEminusminusDEGRADED,
+	_OPERATEminusFULL,
+} ;
+typedef _b4_capabilityStateEnum b4_capabilityStateEnum;
+
+enum _b5_capabilityStateEnum {
+	_UNAVAILABLE,
+	_STANDBY,
+	_OPERATEminusDEGRADED,
+	_OPERATEminusFULL,
+} ;
+typedef _b5_capabilityStateEnum b5_capabilityStateEnum;
+
+enum _spf_healthStateEnum {
+	_NORMAL,
+	_DEGRADED,
+	_FAILED,
+} ;
+typedef _spf_healthStateEnum spf_healthStateEnum;
+
+enum _b1_healthStateEnum {
+	_NORMAL,
+	_DEGRADED,
+	_FAILED,
+} ;
+typedef _b1_healthStateEnum b1_healthStateEnum;
+
+enum _b2_healthStateEnum {
+	_NORMAL,
+	_DEGRADED,
+	_FAILED,
+} ;
+typedef _b2_healthStateEnum b2_healthStateEnum;
+
+enum _b3_healthStateEnum {
+	_NORMAL,
+	_DEGRADED,
+	_FAILED,
+} ;
+typedef _b3_healthStateEnum b3_healthStateEnum;
+
+enum _b4_healthStateEnum {
+	_NORMAL,
+	_DEGRADED,
+	_FAILED,
+} ;
+typedef _b4_healthStateEnum b4_healthStateEnum;
+
+enum _b5_healthStateEnum {
+	_NORMAL,
+	_DEGRADED,
+	_FAILED,
+} ;
+typedef _b5_healthStateEnum b5_healthStateEnum;
+
+enum _he_healthStateEnum {
+	_NORMAL,
+	_DEGRADED,
+	_FAILED,
+} ;
+typedef _he_healthStateEnum he_healthStateEnum;
+
+enum _va_healthStateEnum {
+	_NORMAL,
+	_DEGRADED,
+	_FAILED,
+} ;
+typedef _va_healthStateEnum va_healthStateEnum;
+
+enum _spfc_healthStateEnum {
+	_NORMAL,
+	_DEGRADED,
+	_FAILED,
+} ;
+typedef _spfc_healthStateEnum spfc_healthStateEnum;
+
 /*----- PROTECTED REGION ID(SPFEmulator::Additional Class Declarations) ENABLED START -----*/
 
 //	Additional Class Declarations
@@ -67,6 +186,162 @@ class SPFEmulator : public SEEmulatorBase_ns::SEEmulatorBase
 /*----- PROTECTED REGION END -----*/	//	SPFEmulator::Data Members
 
 
+//	Attribute data members
+public:
+	spf_modeEnum	*attr_spf_mode_read;
+	spf_powerStateEnum	*attr_spf_powerState_read;
+	b1_capabilityStateEnum	*attr_b1_capabilityState_read;
+	b2_capabilityStateEnum	*attr_b2_capabilityState_read;
+	b3_capabilityStateEnum	*attr_b3_capabilityState_read;
+	b4_capabilityStateEnum	*attr_b4_capabilityState_read;
+	b5_capabilityStateEnum	*attr_b5_capabilityState_read;
+	Tango::DevLong	*attr_b1_captime2opFull_read;
+	Tango::DevLong	*attr_b2_captime2opFull_read;
+	Tango::DevLong	*attr_b3_captime2opFull_read;
+	Tango::DevLong	*attr_b4_captime2opFull_read;
+	Tango::DevLong	*attr_b5_captime2opFull_read;
+	spf_healthStateEnum	*attr_spf_healthState_read;
+	b1_healthStateEnum	*attr_b1_healthState_read;
+	b2_healthStateEnum	*attr_b2_healthState_read;
+	b3_healthStateEnum	*attr_b3_healthState_read;
+	b4_healthStateEnum	*attr_b4_healthState_read;
+	b5_healthStateEnum	*attr_b5_healthState_read;
+	he_healthStateEnum	*attr_he_healthState_read;
+	va_healthStateEnum	*attr_va_healthState_read;
+	spfc_healthStateEnum	*attr_spfc_healthState_read;
+	Tango::DevLong	*attr_b1_operationalTime_read;
+	Tango::DevLong	*attr_b2_operationalTime_read;
+	Tango::DevLong	*attr_b3_operationalTime_read;
+	Tango::DevLong	*attr_b4_operationalTime_read;
+	Tango::DevLong	*attr_b5_operationalTime_read;
+	Tango::DevLong	*attr_he_operationalTime_read;
+	Tango::DevLong	*attr_va_operationalTime_read;
+	Tango::DevLong	*attr_spfc_operationalTime_read;
+	Tango::DevLong	*attr_b1_hourCounter_read;
+	Tango::DevLong	*attr_b2_hourCounter_read;
+	Tango::DevLong	*attr_b3_hourCounter_read;
+	Tango::DevDouble	*attr_b4_hourCounter_read;
+	Tango::DevDouble	*attr_b5_hourCounter_read;
+	Tango::DevLong	*attr_he_hourCounter_read;
+	Tango::DevLong	*attr_va_hourCounter_read;
+	Tango::DevLong	*attr_spfc_hourCounter_read;
+	Tango::DevShort	*attr_b1_expectedOnline_read;
+	Tango::DevShort	*attr_b2_expectedOnline_read;
+	Tango::DevShort	*attr_b3_expectedOnline_read;
+	Tango::DevShort	*attr_b4_expectedOnline_read;
+	Tango::DevShort	*attr_b5_expectedOnline_read;
+	Tango::DevShort	*attr_he_expectedOnline_read;
+	Tango::DevShort	*attr_va_expectedOnline_read;
+	Tango::DevShort	*attr_spfc_expectedOnline_read;
+	Tango::DevFloat	*attr_spfc_supplyVoltage_read;
+	Tango::DevFloat	*attr_spfc_supplyCurrent_read;
+	Tango::DevFloat	*attr_spfc_temperature_read;
+	Tango::DevFloat	*attr_he_comp_supplyPressure_read;
+	Tango::DevDouble	*attr_he_comp_returnPressure_read;
+	Tango::DevFloat	*attr_b1_lna_h_drainVoltage_read;
+	Tango::DevFloat	*attr_b2_lna_h_drainVoltage_read;
+	Tango::DevDouble	*attr_b3_lna_h_drainVoltage_read;
+	Tango::DevFloat	*attr_b4_lna_h_drainVoltage_read;
+	Tango::DevFloat	*attr_b5_lna_h_drainVoltage_read;
+	Tango::DevFloat	*attr_b1_lna_h_gateVoltage_read;
+	Tango::DevFloat	*attr_b2_lna_h_gateVoltage_read;
+	Tango::DevFloat	*attr_b3_lna_h_gateVoltage_read;
+	Tango::DevFloat	*attr_b4_lna_h_gateVoltage_read;
+	Tango::DevFloat	*attr_b5_lna_h_gateVoltage_read;
+	Tango::DevDouble	*attr_b1_lna_h_drainCurrent_read;
+	Tango::DevFloat	*attr_b2_lna_h_drainCurrent_read;
+	Tango::DevFloat	*attr_b3_lna_h_drainCurrent_read;
+	Tango::DevFloat	*attr_b4_lna_h_drainCurrent_read;
+	Tango::DevFloat	*attr_b5_lna_h_drainCurrent_read;
+	Tango::DevDouble	*attr_b1_lna_v_drainVoltage_read;
+	Tango::DevFloat	*attr_b2_lna_v_drainVoltage_read;
+	Tango::DevFloat	*attr_b3_lna_v_drainVoltage_read;
+	Tango::DevFloat	*attr_b4_lna_v_drainVoltage_read;
+	Tango::DevFloat	*attr_b5_lna_v_drainVoltage_read;
+	Tango::DevFloat	*attr_b1_lna_v_gateVoltage_read;
+	Tango::DevFloat	*attr_b2_lna_v_gateVoltage_read;
+	Tango::DevFloat	*attr_b3_lna_v_gateVoltage_read;
+	Tango::DevFloat	*attr_b4_lna_v_gateVoltage_read;
+	Tango::DevFloat	*attr_b5_lna_v_gateVoltage_read;
+	Tango::DevFloat	*attr_b1_lna_v_drainCurrent_read;
+	Tango::DevDouble	*attr_b2_lna_v_drainCurrent_read;
+	Tango::DevFloat	*attr_b3_lna_v_drainCurrent_read;
+	Tango::DevFloat	*attr_b4_lna_v_drainCurrent_read;
+	Tango::DevFloat	*attr_b5_lna_v_drainCurrent_read;
+	Tango::DevFloat	*attr_b1_amp2_h_Current_read;
+	Tango::DevFloat	*attr_b2_amp2_h_Current_read;
+	Tango::DevFloat	*attr_b3_amp2_h_Current_read;
+	Tango::DevFloat	*attr_b4_amp2_h_Current_read;
+	Tango::DevFloat	*attr_b5_amp2_h_Current_read;
+	Tango::DevFloat	*attr_b1_amp2_v_Current_read;
+	Tango::DevFloat	*attr_b2_amp2_v_Current_read;
+	Tango::DevFloat	*attr_b3_amp2_v_Current_read;
+	Tango::DevFloat	*attr_b4_amp2_v_Current_read;
+	Tango::DevFloat	*attr_b5_amp2_v_Current_read;
+	Tango::DevFloat	*attr_b1_cs_Current_read;
+	Tango::DevFloat	*attr_b2_cs_Current_read;
+	Tango::DevFloat	*attr_b3_cs_Current_read;
+	Tango::DevFloat	*attr_b4_cs_Current_read;
+	Tango::DevFloat	*attr_b5_cs_Current_read;
+	Tango::DevFloat	*attr_b1_cs_Voltage_read;
+	Tango::DevFloat	*attr_b2_cs_Voltage_read;
+	Tango::DevFloat	*attr_b3_cs_Voltage_read;
+	Tango::DevFloat	*attr_b4_cs_Voltage_read;
+	Tango::DevFloat	*attr_b5_cs_Voltage_read;
+	Tango::DevDouble	*attr_b1_rfe1_heater1Current_read;
+	Tango::DevFloat	*attr_b2_rfe1_heater1Current_read;
+	Tango::DevFloat	*attr_b3_rfe1_heater1Current_read;
+	Tango::DevFloat	*attr_b4_rfe1_heater1Current_read;
+	Tango::DevFloat	*attr_b5_rfe1_heater1Current_read;
+	Tango::DevFloat	*attr_b1_rfe1_heater2Current_read;
+	Tango::DevFloat	*attr_b2_rfe1_heater2Current_read;
+	Tango::DevFloat	*attr_b3_rfe1_heater2Current_read;
+	Tango::DevFloat	*attr_b4_rfe1_heater2Current_read;
+	Tango::DevFloat	*attr_b5_rfe1_heater2Current_read;
+	Tango::DevFloat	*attr_b1_cryoPressure_read;
+	Tango::DevFloat	*attr_b2_cryoPressure_read;
+	Tango::DevFloat	*attr_b345_cryoPressure_read;
+	Tango::DevFloat	*attr_b1_maniPressure_read;
+	Tango::DevFloat	*attr_b2_maniPressure_read;
+	Tango::DevFloat	*attr_b345_maniPressure_read;
+	Tango::DevDouble	*attr_b1_rfe1_temperature_read;
+	Tango::DevDouble	*attr_b2_rfe1_temperature_read;
+	Tango::DevFloat	*attr_b3_rfe1_temperature_read;
+	Tango::DevFloat	*attr_b4_rfe1_temperature_read;
+	Tango::DevFloat	*attr_b5_rfe1_temperature_read;
+	Tango::DevFloat	*attr_b1_rfe2_temperature_read;
+	Tango::DevFloat	*attr_b2_rfe2_temperature_read;
+	Tango::DevFloat	*attr_b3_rfe2_temperature_read;
+	Tango::DevFloat	*attr_b4_rfe2_temperature_read;
+	Tango::DevFloat	*attr_b5_rfe2_temperature_read;
+	Tango::DevFloat	*attr_b1_omt_temperature_read;
+	Tango::DevFloat	*attr_b2_omt_temperature_read;
+	Tango::DevFloat	*attr_b3_omt_temperature_read;
+	Tango::DevFloat	*attr_b4_omt_temperature_read;
+	Tango::DevFloat	*attr_b5_omt_temperature_read;
+	Tango::DevFloat	*attr_b1_cryocool_stage1Temp_read;
+	Tango::DevFloat	*attr_b2_cryocool_stage1Temp_read;
+	Tango::DevFloat	*attr_b3_cryocool_stage1Temp_read;
+	Tango::DevFloat	*attr_b4_cryocool_stage1Temp_read;
+	Tango::DevFloat	*attr_b5_cryocool_stage1Temp_read;
+	Tango::DevFloat	*attr_b1_cryostat_bodyTemp_read;
+	Tango::DevFloat	*attr_b2_cryostat_bodyTemp_read;
+	Tango::DevFloat	*attr_b345_cryostat_bodyTemp_read;
+	Tango::DevFloat	*attr_b1_h_meanGain_read;
+	Tango::DevFloat	*attr_b2_h_meanGain_read;
+	Tango::DevFloat	*attr_b3_h_meanGain_read;
+	Tango::DevFloat	*attr_b4_h_meanGain_read;
+	Tango::DevFloat	*attr_b5_h_meanGain_read;
+	Tango::DevFloat	*attr_b1_v_meanGain_read;
+	Tango::DevFloat	*attr_b2_v_meanGain_read;
+	Tango::DevFloat	*attr_b3_v_meanGain_read;
+	Tango::DevFloat	*attr_b4_v_meanGain_read;
+	Tango::DevFloat	*attr_b5_v_meanGain_read;
+	Tango::DevShort	*attr_b1_lna_h_powerState_read;
+	Tango::DevShort	*attr_b2_lna_h_powerState_read;
+	Tango::DevShort	*attr_b3_lna_h_powerState_read;
+	Tango::DevShort	*attr_b4_lna_h_powerState_read;
+	Tango::DevDouble	*attr_b5_lna_h_powerState_read;
 
 //	Constructors and destructors
 public:
@@ -124,6 +399,1393 @@ public:
 	//--------------------------------------------------------
 	virtual void read_attr_hardware(vector<long> &attr_list);
 
+/**
+ *	Attribute spf_mode related methods
+ *	Description: Current sub-element mode
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_spf_mode(Tango::Attribute &attr);
+	virtual bool is_spf_mode_allowed(Tango::AttReqType type);
+/**
+ *	Attribute spf_powerState related methods
+ *	Description: Current sub-element power state
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_spf_powerState(Tango::Attribute &attr);
+	virtual bool is_spf_powerState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_capabilityState related methods
+ *	Description: Band capability state
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_capabilityState(Tango::Attribute &attr);
+	virtual bool is_b1_capabilityState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_capabilityState related methods
+ *	Description: Band capability state
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_capabilityState(Tango::Attribute &attr);
+	virtual bool is_b2_capabilityState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_capabilityState related methods
+ *	Description: Band capability state
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_capabilityState(Tango::Attribute &attr);
+	virtual bool is_b3_capabilityState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_capabilityState related methods
+ *	Description: Band capability state
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_capabilityState(Tango::Attribute &attr);
+	virtual bool is_b4_capabilityState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_capabilityState related methods
+ *	Description: Band capability state
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_capabilityState(Tango::Attribute &attr);
+	virtual bool is_b5_capabilityState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_captime2opFull related methods
+ *	Description: Time to band Operate_Full capability state
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_captime2opFull(Tango::Attribute &attr);
+	virtual bool is_b1_captime2opFull_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_captime2opFull related methods
+ *	Description: Time to band Operate_Full capability state
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_captime2opFull(Tango::Attribute &attr);
+	virtual bool is_b2_captime2opFull_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_captime2opFull related methods
+ *	Description: Time to band Operate_Full capability state
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_captime2opFull(Tango::Attribute &attr);
+	virtual bool is_b3_captime2opFull_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_captime2opFull related methods
+ *	Description: Time to band Operate_Full capability state
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_captime2opFull(Tango::Attribute &attr);
+	virtual bool is_b4_captime2opFull_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_captime2opFull related methods
+ *	Description: Time to band Operate_Full capability state
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_captime2opFull(Tango::Attribute &attr);
+	virtual bool is_b5_captime2opFull_allowed(Tango::AttReqType type);
+/**
+ *	Attribute spf_healthState related methods
+ *	Description: Aggregated sub-element health
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_spf_healthState(Tango::Attribute &attr);
+	virtual bool is_spf_healthState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_healthState related methods
+ *	Description: Major component health status
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_healthState(Tango::Attribute &attr);
+	virtual bool is_b1_healthState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_healthState related methods
+ *	Description: Major component health status
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_healthState(Tango::Attribute &attr);
+	virtual bool is_b2_healthState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_healthState related methods
+ *	Description: Major component health status
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_healthState(Tango::Attribute &attr);
+	virtual bool is_b3_healthState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_healthState related methods
+ *	Description: Major component health status
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_healthState(Tango::Attribute &attr);
+	virtual bool is_b4_healthState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_healthState related methods
+ *	Description: Major component health status
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_healthState(Tango::Attribute &attr);
+	virtual bool is_b5_healthState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute he_healthState related methods
+ *	Description: Major component health status
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_he_healthState(Tango::Attribute &attr);
+	virtual bool is_he_healthState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute va_healthState related methods
+ *	Description: Major component health status
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_va_healthState(Tango::Attribute &attr);
+	virtual bool is_va_healthState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute spfc_healthState related methods
+ *	Description: Major component health status
+ *
+ *	Data type:	Tango::DevEnum
+ *	Attr type:	Scalar
+ */
+	virtual void read_spfc_healthState(Tango::Attribute &attr);
+	virtual bool is_spfc_healthState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_operationalTime related methods
+ *	Description: Major component total operational run time
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_operationalTime(Tango::Attribute &attr);
+	virtual bool is_b1_operationalTime_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_operationalTime related methods
+ *	Description: Major component total operational run time
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_operationalTime(Tango::Attribute &attr);
+	virtual bool is_b2_operationalTime_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_operationalTime related methods
+ *	Description: Major component total operational run time
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_operationalTime(Tango::Attribute &attr);
+	virtual bool is_b3_operationalTime_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_operationalTime related methods
+ *	Description: Major component total operational run time
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_operationalTime(Tango::Attribute &attr);
+	virtual bool is_b4_operationalTime_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_operationalTime related methods
+ *	Description: Major component total operational run time
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_operationalTime(Tango::Attribute &attr);
+	virtual bool is_b5_operationalTime_allowed(Tango::AttReqType type);
+/**
+ *	Attribute he_operationalTime related methods
+ *	Description: Major component total operational run time
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_he_operationalTime(Tango::Attribute &attr);
+	virtual bool is_he_operationalTime_allowed(Tango::AttReqType type);
+/**
+ *	Attribute va_operationalTime related methods
+ *	Description: Major component total operational run time
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_va_operationalTime(Tango::Attribute &attr);
+	virtual bool is_va_operationalTime_allowed(Tango::AttReqType type);
+/**
+ *	Attribute spfc_operationalTime related methods
+ *	Description: Major component total operational run time
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_spfc_operationalTime(Tango::Attribute &attr);
+	virtual bool is_spfc_operationalTime_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_hourCounter related methods
+ *	Description: Indicates the operational run time in hours
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_hourCounter(Tango::Attribute &attr);
+	virtual bool is_b1_hourCounter_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_hourCounter related methods
+ *	Description: Indicates the operational run time in hours
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_hourCounter(Tango::Attribute &attr);
+	virtual bool is_b2_hourCounter_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_hourCounter related methods
+ *	Description: Indicates the operational run time in hours
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_hourCounter(Tango::Attribute &attr);
+	virtual bool is_b3_hourCounter_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_hourCounter related methods
+ *	Description: Indicates the operational run time in hours
+ *
+ *	Data type:	Tango::DevDouble
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_hourCounter(Tango::Attribute &attr);
+	virtual bool is_b4_hourCounter_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_hourCounter related methods
+ *	Description: Indicates the operational run time in hours
+ *
+ *	Data type:	Tango::DevDouble
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_hourCounter(Tango::Attribute &attr);
+	virtual bool is_b5_hourCounter_allowed(Tango::AttReqType type);
+/**
+ *	Attribute he_hourCounter related methods
+ *	Description: Indicates the operational run time in hours
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_he_hourCounter(Tango::Attribute &attr);
+	virtual bool is_he_hourCounter_allowed(Tango::AttReqType type);
+/**
+ *	Attribute va_hourCounter related methods
+ *	Description: Indicates the operational run time in hours
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_va_hourCounter(Tango::Attribute &attr);
+	virtual bool is_va_hourCounter_allowed(Tango::AttReqType type);
+/**
+ *	Attribute spfc_hourCounter related methods
+ *	Description: Indicates the operational run time in hours
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+	virtual void read_spfc_hourCounter(Tango::Attribute &attr);
+	virtual bool is_spfc_hourCounter_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_expectedOnline related methods
+ *	Description: Indicates whether major component is expected online. mcHealthStatus will be normal if this value is set to false and the device is not installed or offline
+ *
+ *	Data type:	Tango::DevShort
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_expectedOnline(Tango::Attribute &attr);
+	virtual bool is_b1_expectedOnline_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_expectedOnline related methods
+ *	Description: Indicates whether major component is expected online. mcHealthStatus will be normal if this value is set to false and the device is not installed or offline
+ *
+ *	Data type:	Tango::DevShort
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_expectedOnline(Tango::Attribute &attr);
+	virtual bool is_b2_expectedOnline_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_expectedOnline related methods
+ *	Description: Indicates whether major component is expected online. mcHealthStatus will be normal if this value is set to false and the device is not installed or offline
+ *
+ *	Data type:	Tango::DevShort
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_expectedOnline(Tango::Attribute &attr);
+	virtual bool is_b3_expectedOnline_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_expectedOnline related methods
+ *	Description: Indicates whether major component is expected online. mcHealthStatus will be normal if this value is set to false and the device is not installed or offline
+ *
+ *	Data type:	Tango::DevShort
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_expectedOnline(Tango::Attribute &attr);
+	virtual bool is_b4_expectedOnline_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_expectedOnline related methods
+ *	Description: Indicates whether major component is expected online. mcHealthStatus will be normal if this value is set to false and the device is not installed or offline
+ *
+ *	Data type:	Tango::DevShort
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_expectedOnline(Tango::Attribute &attr);
+	virtual bool is_b5_expectedOnline_allowed(Tango::AttReqType type);
+/**
+ *	Attribute he_expectedOnline related methods
+ *	Description: Indicates whether major component is expected online. mcHealthStatus will be normal if this value is set to false and the device is not installed or offline
+ *
+ *	Data type:	Tango::DevShort
+ *	Attr type:	Scalar
+ */
+	virtual void read_he_expectedOnline(Tango::Attribute &attr);
+	virtual bool is_he_expectedOnline_allowed(Tango::AttReqType type);
+/**
+ *	Attribute va_expectedOnline related methods
+ *	Description: 
+ *
+ *	Data type:	Tango::DevShort
+ *	Attr type:	Scalar
+ */
+	virtual void read_va_expectedOnline(Tango::Attribute &attr);
+	virtual bool is_va_expectedOnline_allowed(Tango::AttReqType type);
+/**
+ *	Attribute spfc_expectedOnline related methods
+ *	Description: Indicates whether major component is expected online. mcHealthStatus will be normal if this value is set to false and the device is not installed or offline
+ *
+ *	Data type:	Tango::DevShort
+ *	Attr type:	Scalar
+ */
+	virtual void read_spfc_expectedOnline(Tango::Attribute &attr);
+	virtual bool is_spfc_expectedOnline_allowed(Tango::AttReqType type);
+/**
+ *	Attribute spfc_supplyVoltage related methods
+ *	Description: Controller supply voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_spfc_supplyVoltage(Tango::Attribute &attr);
+	virtual bool is_spfc_supplyVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute spfc_supplyCurrent related methods
+ *	Description: Controller supply current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_spfc_supplyCurrent(Tango::Attribute &attr);
+	virtual bool is_spfc_supplyCurrent_allowed(Tango::AttReqType type);
+/**
+ *	Attribute spfc_temperature related methods
+ *	Description: Controller temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_spfc_temperature(Tango::Attribute &attr);
+	virtual bool is_spfc_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute he_comp_supplyPressure related methods
+ *	Description: Helium compressor supply pressure
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_he_comp_supplyPressure(Tango::Attribute &attr);
+	virtual bool is_he_comp_supplyPressure_allowed(Tango::AttReqType type);
+/**
+ *	Attribute he_comp_returnPressure related methods
+ *	Description: Helium compressor return pressure
+ *
+ *	Data type:	Tango::DevDouble
+ *	Attr type:	Scalar
+ */
+	virtual void read_he_comp_returnPressure(Tango::Attribute &attr);
+	virtual bool is_he_comp_returnPressure_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_lna_h_drainVoltage related methods
+ *	Description: Sum of H-channel LNA drain voltages
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_lna_h_drainVoltage(Tango::Attribute &attr);
+	virtual bool is_b1_lna_h_drainVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_lna_h_drainVoltage related methods
+ *	Description: Sum of H-channel LNA drain voltages
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_lna_h_drainVoltage(Tango::Attribute &attr);
+	virtual bool is_b2_lna_h_drainVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_lna_h_drainVoltage related methods
+ *	Description: Sum of H-channel LNA drain voltages
+ *
+ *	Data type:	Tango::DevDouble
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_lna_h_drainVoltage(Tango::Attribute &attr);
+	virtual bool is_b3_lna_h_drainVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_lna_h_drainVoltage related methods
+ *	Description: Sum of H-channel LNA drain voltages
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_lna_h_drainVoltage(Tango::Attribute &attr);
+	virtual bool is_b4_lna_h_drainVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_lna_h_drainVoltage related methods
+ *	Description: Sum of H-channel LNA drain voltages
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_lna_h_drainVoltage(Tango::Attribute &attr);
+	virtual bool is_b5_lna_h_drainVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_lna_h_gateVoltage related methods
+ *	Description: H-channel LNA gate voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_lna_h_gateVoltage(Tango::Attribute &attr);
+	virtual bool is_b1_lna_h_gateVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_lna_h_gateVoltage related methods
+ *	Description: H-channel LNA gate voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_lna_h_gateVoltage(Tango::Attribute &attr);
+	virtual bool is_b2_lna_h_gateVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_lna_h_gateVoltage related methods
+ *	Description: H-channel LNA gate voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_lna_h_gateVoltage(Tango::Attribute &attr);
+	virtual bool is_b3_lna_h_gateVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_lna_h_gateVoltage related methods
+ *	Description: H-channel LNA gate voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_lna_h_gateVoltage(Tango::Attribute &attr);
+	virtual bool is_b4_lna_h_gateVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_lna_h_gateVoltage related methods
+ *	Description: H-channel LNA gate voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_lna_h_gateVoltage(Tango::Attribute &attr);
+	virtual bool is_b5_lna_h_gateVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_lna_h_drainCurrent related methods
+ *	Description: Sum of H-channel LNA drain currents
+ *
+ *	Data type:	Tango::DevDouble
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_lna_h_drainCurrent(Tango::Attribute &attr);
+	virtual bool is_b1_lna_h_drainCurrent_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_lna_h_drainCurrent related methods
+ *	Description: Sum of H-channel LNA drain currents
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_lna_h_drainCurrent(Tango::Attribute &attr);
+	virtual bool is_b2_lna_h_drainCurrent_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_lna_h_drainCurrent related methods
+ *	Description: Sum of H-channel LNA drain currents
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_lna_h_drainCurrent(Tango::Attribute &attr);
+	virtual bool is_b3_lna_h_drainCurrent_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_lna_h_drainCurrent related methods
+ *	Description: Sum of H-channel LNA drain currents
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_lna_h_drainCurrent(Tango::Attribute &attr);
+	virtual bool is_b4_lna_h_drainCurrent_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_lna_h_drainCurrent related methods
+ *	Description: Sum of H-channel LNA drain currents
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_lna_h_drainCurrent(Tango::Attribute &attr);
+	virtual bool is_b5_lna_h_drainCurrent_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_lna_v_drainVoltage related methods
+ *	Description: Sum of V-channel LNA drain voltages
+ *
+ *	Data type:	Tango::DevDouble
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_lna_v_drainVoltage(Tango::Attribute &attr);
+	virtual bool is_b1_lna_v_drainVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_lna_v_drainVoltage related methods
+ *	Description: Sum of V-channel LNA drain voltages
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_lna_v_drainVoltage(Tango::Attribute &attr);
+	virtual bool is_b2_lna_v_drainVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_lna_v_drainVoltage related methods
+ *	Description: Sum of V-channel LNA drain voltages
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_lna_v_drainVoltage(Tango::Attribute &attr);
+	virtual bool is_b3_lna_v_drainVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_lna_v_drainVoltage related methods
+ *	Description: Sum of V-channel LNA drain voltages
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_lna_v_drainVoltage(Tango::Attribute &attr);
+	virtual bool is_b4_lna_v_drainVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_lna_v_drainVoltage related methods
+ *	Description: Sum of V-channel LNA drain voltages
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_lna_v_drainVoltage(Tango::Attribute &attr);
+	virtual bool is_b5_lna_v_drainVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_lna_v_gateVoltage related methods
+ *	Description: V-channel LNA gate voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_lna_v_gateVoltage(Tango::Attribute &attr);
+	virtual bool is_b1_lna_v_gateVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_lna_v_gateVoltage related methods
+ *	Description: V-channel LNA gate voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_lna_v_gateVoltage(Tango::Attribute &attr);
+	virtual bool is_b2_lna_v_gateVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_lna_v_gateVoltage related methods
+ *	Description: V-channel LNA gate voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_lna_v_gateVoltage(Tango::Attribute &attr);
+	virtual bool is_b3_lna_v_gateVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_lna_v_gateVoltage related methods
+ *	Description: V-channel LNA gate voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_lna_v_gateVoltage(Tango::Attribute &attr);
+	virtual bool is_b4_lna_v_gateVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_lna_v_gateVoltage related methods
+ *	Description: V-channel LNA gate voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_lna_v_gateVoltage(Tango::Attribute &attr);
+	virtual bool is_b5_lna_v_gateVoltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_lna_v_drainCurrent related methods
+ *	Description: Sum of V-channel LNA drain currents
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_lna_v_drainCurrent(Tango::Attribute &attr);
+	virtual bool is_b1_lna_v_drainCurrent_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_lna_v_drainCurrent related methods
+ *	Description: Sum of V-channel LNA drain currents
+ *
+ *	Data type:	Tango::DevDouble
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_lna_v_drainCurrent(Tango::Attribute &attr);
+	virtual bool is_b2_lna_v_drainCurrent_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_lna_v_drainCurrent related methods
+ *	Description: Sum of V-channel LNA drain currents
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_lna_v_drainCurrent(Tango::Attribute &attr);
+	virtual bool is_b3_lna_v_drainCurrent_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_lna_v_drainCurrent related methods
+ *	Description: Sum of V-channel LNA drain currents
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_lna_v_drainCurrent(Tango::Attribute &attr);
+	virtual bool is_b4_lna_v_drainCurrent_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_lna_v_drainCurrent related methods
+ *	Description: Sum of V-channel LNA drain currents
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_lna_v_drainCurrent(Tango::Attribute &attr);
+	virtual bool is_b5_lna_v_drainCurrent_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_amp2_h_Current related methods
+ *	Description: H-channel 2nd Stage amplifier Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_amp2_h_Current(Tango::Attribute &attr);
+	virtual bool is_b1_amp2_h_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_amp2_h_Current related methods
+ *	Description: H-channel 2nd Stage amplifier Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_amp2_h_Current(Tango::Attribute &attr);
+	virtual bool is_b2_amp2_h_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_amp2_h_Current related methods
+ *	Description: H-channel 2nd Stage amplifier Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_amp2_h_Current(Tango::Attribute &attr);
+	virtual bool is_b3_amp2_h_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_amp2_h_Current related methods
+ *	Description: H-channel 2nd Stage amplifier Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_amp2_h_Current(Tango::Attribute &attr);
+	virtual bool is_b4_amp2_h_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_amp2_h_Current related methods
+ *	Description: H-channel 2nd Stage amplifier Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_amp2_h_Current(Tango::Attribute &attr);
+	virtual bool is_b5_amp2_h_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_amp2_v_Current related methods
+ *	Description: V-channel 2nd Stage amplifier Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_amp2_v_Current(Tango::Attribute &attr);
+	virtual bool is_b1_amp2_v_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_amp2_v_Current related methods
+ *	Description: V-channel 2nd Stage amplifier Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_amp2_v_Current(Tango::Attribute &attr);
+	virtual bool is_b2_amp2_v_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_amp2_v_Current related methods
+ *	Description: V-channel 2nd Stage amplifier Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_amp2_v_Current(Tango::Attribute &attr);
+	virtual bool is_b3_amp2_v_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_amp2_v_Current related methods
+ *	Description: V-channel 2nd Stage amplifier Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_amp2_v_Current(Tango::Attribute &attr);
+	virtual bool is_b4_amp2_v_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_amp2_v_Current related methods
+ *	Description: V-channel 2nd Stage amplifier Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_amp2_v_Current(Tango::Attribute &attr);
+	virtual bool is_b5_amp2_v_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_cs_Current related methods
+ *	Description: Calibration Source Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_cs_Current(Tango::Attribute &attr);
+	virtual bool is_b1_cs_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_cs_Current related methods
+ *	Description: Calibration Source Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_cs_Current(Tango::Attribute &attr);
+	virtual bool is_b2_cs_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_cs_Current related methods
+ *	Description: Calibration Source Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_cs_Current(Tango::Attribute &attr);
+	virtual bool is_b3_cs_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_cs_Current related methods
+ *	Description: Calibration Source Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_cs_Current(Tango::Attribute &attr);
+	virtual bool is_b4_cs_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_cs_Current related methods
+ *	Description: Calibration Source Current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_cs_Current(Tango::Attribute &attr);
+	virtual bool is_b5_cs_Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_cs_Voltage related methods
+ *	Description: Calibration Source Voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_cs_Voltage(Tango::Attribute &attr);
+	virtual bool is_b1_cs_Voltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_cs_Voltage related methods
+ *	Description: Calibration Source Voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_cs_Voltage(Tango::Attribute &attr);
+	virtual bool is_b2_cs_Voltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_cs_Voltage related methods
+ *	Description: Calibration Source Voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_cs_Voltage(Tango::Attribute &attr);
+	virtual bool is_b3_cs_Voltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_cs_Voltage related methods
+ *	Description: Calibration Source Voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_cs_Voltage(Tango::Attribute &attr);
+	virtual bool is_b4_cs_Voltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_cs_Voltage related methods
+ *	Description: Calibration Source Voltage
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_cs_Voltage(Tango::Attribute &attr);
+	virtual bool is_b5_cs_Voltage_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_rfe1_heater1Current related methods
+ *	Description: RFE 1st stage heater current
+ *
+ *	Data type:	Tango::DevDouble
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_rfe1_heater1Current(Tango::Attribute &attr);
+	virtual bool is_b1_rfe1_heater1Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_rfe1_heater1Current related methods
+ *	Description: RFE 1st stage heater current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_rfe1_heater1Current(Tango::Attribute &attr);
+	virtual bool is_b2_rfe1_heater1Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_rfe1_heater1Current related methods
+ *	Description: RFE 1st stage heater current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_rfe1_heater1Current(Tango::Attribute &attr);
+	virtual bool is_b3_rfe1_heater1Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_rfe1_heater1Current related methods
+ *	Description: RFE 1st stage heater current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_rfe1_heater1Current(Tango::Attribute &attr);
+	virtual bool is_b4_rfe1_heater1Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_rfe1_heater1Current related methods
+ *	Description: RFE 1st stage heater current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_rfe1_heater1Current(Tango::Attribute &attr);
+	virtual bool is_b5_rfe1_heater1Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_rfe1_heater2Current related methods
+ *	Description: RFE 2nd stage heater current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_rfe1_heater2Current(Tango::Attribute &attr);
+	virtual bool is_b1_rfe1_heater2Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_rfe1_heater2Current related methods
+ *	Description: RFE 2nd stage heater current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_rfe1_heater2Current(Tango::Attribute &attr);
+	virtual bool is_b2_rfe1_heater2Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_rfe1_heater2Current related methods
+ *	Description: RFE 2nd stage heater current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_rfe1_heater2Current(Tango::Attribute &attr);
+	virtual bool is_b3_rfe1_heater2Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_rfe1_heater2Current related methods
+ *	Description: RFE 2nd stage heater current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_rfe1_heater2Current(Tango::Attribute &attr);
+	virtual bool is_b4_rfe1_heater2Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_rfe1_heater2Current related methods
+ *	Description: RFE 2nd stage heater current
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_rfe1_heater2Current(Tango::Attribute &attr);
+	virtual bool is_b5_rfe1_heater2Current_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_cryoPressure related methods
+ *	Description: Feed Cryostat pressure
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_cryoPressure(Tango::Attribute &attr);
+	virtual bool is_b1_cryoPressure_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_cryoPressure related methods
+ *	Description: Feed Cryostat pressure
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_cryoPressure(Tango::Attribute &attr);
+	virtual bool is_b2_cryoPressure_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b345_cryoPressure related methods
+ *	Description: Feed Cryostat pressure
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b345_cryoPressure(Tango::Attribute &attr);
+	virtual bool is_b345_cryoPressure_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_maniPressure related methods
+ *	Description: Manifold pressure
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_maniPressure(Tango::Attribute &attr);
+	virtual bool is_b1_maniPressure_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_maniPressure related methods
+ *	Description: Manifold pressure
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_maniPressure(Tango::Attribute &attr);
+	virtual bool is_b2_maniPressure_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b345_maniPressure related methods
+ *	Description: Manifold pressure
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b345_maniPressure(Tango::Attribute &attr);
+	virtual bool is_b345_maniPressure_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_rfe1_temperature related methods
+ *	Description: RFE 1st stage temperature
+ *
+ *	Data type:	Tango::DevDouble
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_rfe1_temperature(Tango::Attribute &attr);
+	virtual bool is_b1_rfe1_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_rfe1_temperature related methods
+ *	Description: RFE 1st stage temperature
+ *
+ *	Data type:	Tango::DevDouble
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_rfe1_temperature(Tango::Attribute &attr);
+	virtual bool is_b2_rfe1_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_rfe1_temperature related methods
+ *	Description: RFE 1st stage temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_rfe1_temperature(Tango::Attribute &attr);
+	virtual bool is_b3_rfe1_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_rfe1_temperature related methods
+ *	Description: RFE 1st stage temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_rfe1_temperature(Tango::Attribute &attr);
+	virtual bool is_b4_rfe1_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_rfe1_temperature related methods
+ *	Description: RFE 1st stage temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_rfe1_temperature(Tango::Attribute &attr);
+	virtual bool is_b5_rfe1_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_rfe2_temperature related methods
+ *	Description: RFE 2nd stage temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_rfe2_temperature(Tango::Attribute &attr);
+	virtual bool is_b1_rfe2_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_rfe2_temperature related methods
+ *	Description: RFE 2nd stage temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_rfe2_temperature(Tango::Attribute &attr);
+	virtual bool is_b2_rfe2_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_rfe2_temperature related methods
+ *	Description: RFE 2nd stage temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_rfe2_temperature(Tango::Attribute &attr);
+	virtual bool is_b3_rfe2_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_rfe2_temperature related methods
+ *	Description: RFE 2nd stage temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_rfe2_temperature(Tango::Attribute &attr);
+	virtual bool is_b4_rfe2_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_rfe2_temperature related methods
+ *	Description: RFE 2nd stage temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_rfe2_temperature(Tango::Attribute &attr);
+	virtual bool is_b5_rfe2_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_omt_temperature related methods
+ *	Description: OMT temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_omt_temperature(Tango::Attribute &attr);
+	virtual bool is_b1_omt_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_omt_temperature related methods
+ *	Description: OMT temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_omt_temperature(Tango::Attribute &attr);
+	virtual bool is_b2_omt_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_omt_temperature related methods
+ *	Description: OMT temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_omt_temperature(Tango::Attribute &attr);
+	virtual bool is_b3_omt_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_omt_temperature related methods
+ *	Description: OMT temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_omt_temperature(Tango::Attribute &attr);
+	virtual bool is_b4_omt_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_omt_temperature related methods
+ *	Description: OMT temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_omt_temperature(Tango::Attribute &attr);
+	virtual bool is_b5_omt_temperature_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_cryocool_stage1Temp related methods
+ *	Description: Cryocooler 1st stage temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_cryocool_stage1Temp(Tango::Attribute &attr);
+	virtual bool is_b1_cryocool_stage1Temp_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_cryocool_stage1Temp related methods
+ *	Description: Cryocooler 1st stage temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_cryocool_stage1Temp(Tango::Attribute &attr);
+	virtual bool is_b2_cryocool_stage1Temp_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_cryocool_stage1Temp related methods
+ *	Description: Cryocooler 1st stage temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_cryocool_stage1Temp(Tango::Attribute &attr);
+	virtual bool is_b3_cryocool_stage1Temp_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_cryocool_stage1Temp related methods
+ *	Description: Cryocooler 1st stage temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_cryocool_stage1Temp(Tango::Attribute &attr);
+	virtual bool is_b4_cryocool_stage1Temp_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_cryocool_stage1Temp related methods
+ *	Description: Cryocooler 1st stage temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_cryocool_stage1Temp(Tango::Attribute &attr);
+	virtual bool is_b5_cryocool_stage1Temp_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_cryostat_bodyTemp related methods
+ *	Description: Cryostat body temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_cryostat_bodyTemp(Tango::Attribute &attr);
+	virtual bool is_b1_cryostat_bodyTemp_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_cryostat_bodyTemp related methods
+ *	Description: Cryostat body temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_cryostat_bodyTemp(Tango::Attribute &attr);
+	virtual bool is_b2_cryostat_bodyTemp_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b345_cryostat_bodyTemp related methods
+ *	Description: Cryostat body temperature
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b345_cryostat_bodyTemp(Tango::Attribute &attr);
+	virtual bool is_b345_cryostat_bodyTemp_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_h_meanGain related methods
+ *	Description: H-chan LNA mean gain extracted from ConfigData.ini
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_h_meanGain(Tango::Attribute &attr);
+	virtual bool is_b1_h_meanGain_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_h_meanGain related methods
+ *	Description: H-chan LNA mean gain extracted from ConfigData.ini
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_h_meanGain(Tango::Attribute &attr);
+	virtual bool is_b2_h_meanGain_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_h_meanGain related methods
+ *	Description: H-chan LNA mean gain extracted from ConfigData.ini
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_h_meanGain(Tango::Attribute &attr);
+	virtual bool is_b3_h_meanGain_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_h_meanGain related methods
+ *	Description: H-chan LNA mean gain extracted from ConfigData.ini
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_h_meanGain(Tango::Attribute &attr);
+	virtual bool is_b4_h_meanGain_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_h_meanGain related methods
+ *	Description: H-chan LNA mean gain extracted from ConfigData.ini
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_h_meanGain(Tango::Attribute &attr);
+	virtual bool is_b5_h_meanGain_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_v_meanGain related methods
+ *	Description: V-chan LNA mean gain extracted from ConfigData.ini
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_v_meanGain(Tango::Attribute &attr);
+	virtual bool is_b1_v_meanGain_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_v_meanGain related methods
+ *	Description: V-chan LNA mean gain extracted from ConfigData.ini
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_v_meanGain(Tango::Attribute &attr);
+	virtual bool is_b2_v_meanGain_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_v_meanGain related methods
+ *	Description: V-chan LNA mean gain extracted from ConfigData.ini
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_v_meanGain(Tango::Attribute &attr);
+	virtual bool is_b3_v_meanGain_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_v_meanGain related methods
+ *	Description: V-chan LNA mean gain extracted from ConfigData.ini
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_v_meanGain(Tango::Attribute &attr);
+	virtual bool is_b4_v_meanGain_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_v_meanGain related methods
+ *	Description: V-chan LNA mean gain extracted from ConfigData.ini
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_v_meanGain(Tango::Attribute &attr);
+	virtual bool is_b5_v_meanGain_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b1_lna_h_powerState related methods
+ *	Description: H-channel LNA power enabled/disabled
+ *
+ *	Data type:	Tango::DevShort
+ *	Attr type:	Scalar
+ */
+	virtual void read_b1_lna_h_powerState(Tango::Attribute &attr);
+	virtual bool is_b1_lna_h_powerState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b2_lna_h_powerState related methods
+ *	Description: H-channel LNA power enabled/disabled
+ *
+ *	Data type:	Tango::DevShort
+ *	Attr type:	Scalar
+ */
+	virtual void read_b2_lna_h_powerState(Tango::Attribute &attr);
+	virtual bool is_b2_lna_h_powerState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b3_lna_h_powerState related methods
+ *	Description: H-channel LNA power enabled/disabled
+ *
+ *	Data type:	Tango::DevShort
+ *	Attr type:	Scalar
+ */
+	virtual void read_b3_lna_h_powerState(Tango::Attribute &attr);
+	virtual bool is_b3_lna_h_powerState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b4_lna_h_powerState related methods
+ *	Description: H-channel LNA power enabled/disabled
+ *
+ *	Data type:	Tango::DevShort
+ *	Attr type:	Scalar
+ */
+	virtual void read_b4_lna_h_powerState(Tango::Attribute &attr);
+	virtual bool is_b4_lna_h_powerState_allowed(Tango::AttReqType type);
+/**
+ *	Attribute b5_lna_h_powerState related methods
+ *	Description: H-channel LNA power enabled/disabled
+ *
+ *	Data type:	Tango::DevDouble
+ *	Attr type:	Scalar
+ */
+	virtual void read_b5_lna_h_powerState(Tango::Attribute &attr);
+	virtual bool is_b5_lna_h_powerState_allowed(Tango::AttReqType type);
+
 
 	//--------------------------------------------------------
 	/**
@@ -138,6 +1800,132 @@ public:
 
 //	Command related methods
 public:
+	/**
+	 *	Command IlluminateLNA related method
+	 *	Description: Enable the LNA illumination for a fraction of a second
+	 *
+	 *	@param argin Major component band {B1,B2,B3,B4,B5}
+	 *	@returns 
+	 */
+	virtual Tango::DevVarLongStringArray *illuminate_lna(Tango::DevShort argin);
+	virtual bool is_IlluminateLNA_allowed(const CORBA::Any &any);
+	/**
+	 *	Command SetLNAHPowerState related method
+	 *	Description: Switch the H-channel LNA power on/off.
+	 *
+	 *	@param argin Enable: 1
+	 *               disable: 0
+	 *	@returns 
+	 */
+	virtual Tango::DevVarLongStringArray *set_lnahpower_state(Tango::DevShort argin);
+	virtual bool is_SetLNAHPowerState_allowed(const CORBA::Any &any);
+	/**
+	 *	Command SetLNAVPowerState related method
+	 *	Description: Switch the V-channel LNA power on/off
+	 *
+	 *	@param argin Enable: 1
+	 *               Disable: 0
+	 *	@returns 
+	 */
+	virtual Tango::DevVarLongStringArray *set_lnavpower_state(Tango::DevShort argin);
+	virtual bool is_SetLNAVPowerState_allowed(const CORBA::Any &any);
+	/**
+	 *	Command SetAmp2HPowerState related method
+	 *	Description: Switch the 2nd stage H-channel amplifier power on/off
+	 *
+	 *	@param argin [0]: majorComponentBand
+	 *               [1]: enable/disable
+	 *	@returns 
+	 */
+	virtual Tango::DevVarLongStringArray *set_amp2_hpower_state(const Tango::DevVarShortArray *argin);
+	virtual bool is_SetAmp2HPowerState_allowed(const CORBA::Any &any);
+	/**
+	 *	Command SetAmp2VPowerState related method
+	 *	Description: Switch the 2nd stage V-channel amplifier power on/off.
+	 *
+	 *	@param argin [0]: Major component state
+	 *	@returns 
+	 */
+	virtual Tango::DevVarLongStringArray *set_amp2_vpower_state(const Tango::DevVarShortArray *argin);
+	virtual bool is_SetAmp2VPowerState_allowed(const CORBA::Any &any);
+	/**
+	 *	Command SetRFE1TempDefault related method
+	 *	Description: Select the default RFE 1st stage temperature setpoint that the feed will go to with a startup or restart.
+	 *
+	 *	@param argin [0]: Major component band {B1, B2, B3, B4, B5}
+	 *               [1]: Rfe1 temp default {?disabled? | ?sp1? | ?sp2? | ?sp3? | ?sp4?| ?sp5? | ?sp6?}
+	 *	@returns 
+	 */
+	virtual Tango::DevVarLongStringArray *set_rfe1_temp_default(const Tango::DevVarShortArray *argin);
+	virtual bool is_SetRFE1TempDefault_allowed(const CORBA::Any &any);
+	/**
+	 *	Command SetRFE1TempSetPoint related method
+	 *	Description: Change the current RFE 1st stage temperature control setpoint. 
+	 *               This will not influence the default value. An extra parameter ?warm? is 
+	 *               included in these service mode messages.
+	 *
+	 *	@param argin [0]: Major component band {B1,B2,B3,B4,B5}
+	 *               [1]: temp set point {?disable? | ?sp1? | ?sp2? | ?sp3? | ?sp4? | ?sp5? | ?sp6? | ?warm?}
+	 */
+	virtual void set_rfe1_temp_set_point(const Tango::DevVarShortArray *argin);
+	virtual bool is_SetRFE1TempSetPoint_allowed(const CORBA::Any &any);
+	/**
+	 *	Command SetRFE2TempCntrState related method
+	 *	Description: Enable or disable the RFE 2nd stage temperature controller.
+	 *
+	 *	@param argin [0]: Major component band {B1,B2,B3,B4,B5,B6}
+	 *               [1]: Enable/disable
+	 *	@returns 
+	 */
+	virtual Tango::DevVarLongStringArray *set_rfe2_temp_cntr_state(const Tango::DevVarShortArray *argin);
+	virtual bool is_SetRFE2TempCntrState_allowed(const CORBA::Any &any);
+	/**
+	 *	Command SetCryoMotorState related method
+	 *	Description: Enable or disable the cryocooler (motor)
+	 *
+	 *	@param argin [0]: cryoStat {B1,B2,B345}
+	 *               [1]: enable/disable
+	 *	@returns 
+	 */
+	virtual Tango::DevVarLongStringArray *set_cryo_motor_state(const Tango::DevVarShortArray *argin);
+	virtual bool is_SetCryoMotorState_allowed(const CORBA::Any &any);
+	/**
+	 *	Command SetCryoMotorSpeed related method
+	 *	Description: Set the motor speed in rpm [45 - 90].
+	 *
+	 *	@param argin [0]: cryo stat {B1,B2,B345}
+	 *               [1]: Speed in rpm {45,46,...90}
+	 *	@returns 
+	 */
+	virtual Tango::DevVarLongStringArray *set_cryo_motor_speed(const Tango::DevVarShortArray *argin);
+	virtual bool is_SetCryoMotorSpeed_allowed(const CORBA::Any &any);
+	/**
+	 *	Command SetVaValveState related method
+	 *	Description: Open/close the vacuum valve.
+	 *
+	 *	@param argin Enable/disable
+	 *	@returns 
+	 */
+	virtual Tango::DevVarLongStringArray *set_va_valve_state(Tango::DevShort argin);
+	virtual bool is_SetVaValveState_allowed(const CORBA::Any &any);
+	/**
+	 *	Command SetSubElementMode related method
+	 *	Description: Set the sub-element mode.
+	 *
+	 *	@param argin {?Operate? | ?Standby_LP? | `Maintenance`}
+	 */
+	virtual void set_sub_element_mode(Tango::DevShort argin);
+	virtual bool is_SetSubElementMode_allowed(const CORBA::Any &any);
+	/**
+	 *	Command SetFeedMode related method
+	 *	Description: Set the sub-element feed package mode
+	 *
+	 *	@param argin [0]: Major component band {B1,B2,B3,B4,B5}
+	 *               [1]: seFeedMode {?Operate? | ?Standby_LP?}
+	 *	@returns 
+	 */
+	virtual Tango::DevVarLongStringArray *set_feed_mode(const Tango::DevVarShortArray *argin);
+	virtual bool is_SetFeedMode_allowed(const CORBA::Any &any);
 
 
 	//--------------------------------------------------------
