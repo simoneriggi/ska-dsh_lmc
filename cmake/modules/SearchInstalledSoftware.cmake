@@ -79,7 +79,8 @@ MESSAGE(STATUS "TANGO_LIBRARIES: ${TANGO_LIBRARIES}")
 #==================================
 #== Check for BOOST             ===
 #==================================
-find_package(Boost REQUIRED COMPONENTS filesystem system regex)
+find_package(Boost REQUIRED COMPONENTS filesystem system regex thread log log_setup)
+add_definitions(-DBOOST_LOG_USE_NATIVE_SYSLOG -DBOOST_LOG_DYN_LINK)
 message (STATUS "BOOST HEADERS: ${Boost_INCLUDE_DIRS}, LIBS: ${Boost_LIBRARIES}")
 #-------------------------
 
@@ -136,6 +137,25 @@ FIND_PACKAGE(PugiXML REQUIRED)
 MESSAGE(STATUS "PUGIXML_INCLUDE_DIR: ${PUGIXML_INCLUDE_DIR}")
 MESSAGE(STATUS "PUGIXML_LIBRARIES: ${PUGIXML_LIBRARIES}")
 
+
+#==================================
+#==   Check for Log4Cxx         ===
+#==================================
+MESSAGE(STATUS "Looking for Log4Cxx")
+FIND_PACKAGE(Log4Cxx REQUIRED)
+MESSAGE(STATUS "LOG4CXX_INCLUDE_DIR: ${LOG4CXX_INCLUDE_DIRS}")
+MESSAGE(STATUS "LOG4CXX_LIBRARIES: ${LOG4CXX_LIBRARIES}")
+
+#======================================
+#==   Check for Google Test         ===
+#======================================
+if (ENABLE_TEST)
+	MESSAGE(STATUS "Looking for GoogleTest")
+	enable_testing()
+	FIND_PACKAGE(GTest REQUIRED)
+	MESSAGE(STATUS "GTEST_INCLUDE_DIRS: ${GTEST_INCLUDE_DIRS}")
+	MESSAGE(STATUS "GTEST_LIBRARIES: ${GTEST_BOTH_LIBRARIES}")
+endif()
 
 
 
