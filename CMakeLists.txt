@@ -29,6 +29,7 @@ set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_PREFIX}/include)
 set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)
 set(BINARY_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/bin)
+set(CMAKE_TEST_COMMAND ctest -VV)
 
 message (STATUS "CMAKE_LIBRARY_OUTPUT_DIRECTORY: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
 message (STATUS "PROJECT_BINARY_DIR: ${PROJECT_BINARY_DIR}")
@@ -49,6 +50,10 @@ set(${PROJECT_NAME}_VERSION "1.1.0")
 set(${PROJECT_NAME}_VERSION_MAJOR "1")
 set(${PROJECT_NAME}_VERSION_MINOR "1")
 set(${PROJECT_NAME}_VERSION_PATCH "0")
+
+
+# Options. Turn on with 'cmake -Dmyvarname=ON'.
+option(ENABLE_TEST "Build all tests." OFF) # Makes boolean 'test' available.
 
 # ----------------------------------------------------------------------------------------------
 #---Load some basic macros which are needed later for the configuration and build----------------
@@ -85,6 +90,7 @@ list (APPEND INCLUDE_DIRS ${TANGO_INCLUDE_DIR})
 list (APPEND INCLUDE_DIRS ${JSONCPP_INCLUDE_DIR})
 list (APPEND INCLUDE_DIRS ${PUGIXML_INCLUDE_DIR})
 list (APPEND INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
+list (APPEND INCLUDE_DIRS ${LOG4CXX_INCLUDE_DIRS})
 include_directories(${INCLUDE_DIRS})
 
 # Append external libs found 
@@ -94,6 +100,7 @@ list (APPEND LINKED_LIBS ${TANGO_LIBRARIES})
 list (APPEND LINKED_LIBS ${JSONCPP_LIBRARIES})
 list (APPEND LINKED_LIBS ${PUGIXML_LIBRARIES})
 list (APPEND LINKED_LIBS ${Boost_LIBRARIES})
+list (APPEND LINKED_LIBS ${LOG4CXX_LIBRARIES})
 message (STATUS "LINKED_LIBS: ${LINKED_LIBS}")
 
 
@@ -101,18 +108,18 @@ set(DEVICE_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/devices)
 set(DEVICE_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/src/devices)
 
 #-- Base Device
-set(BaseDevice_DIR ${DEVICE_SRC_DIR}/Core/BaseDevice)
-set(BaseDevice_DOWNLOAD_DIR ${BaseDevice_DIR})
-set(BaseDevice_DOWNLOAD_DEST_DIR ${DEVICE_BUILD_DIR}/Core)
-set(BaseDevice_BUILD_DIR ${DEVICE_BUILD_DIR}/Core/BaseDevice)
-set(BaseDevice_EXE ${BaseDevice_BUILD_DIR}/bin/BaseDevice)
+#set(BaseDevice_DIR ${DEVICE_SRC_DIR}/Core/BaseDevice)
+#set(BaseDevice_DOWNLOAD_DIR ${BaseDevice_DIR})
+#set(BaseDevice_DOWNLOAD_DEST_DIR ${DEVICE_BUILD_DIR}/Core)
+#set(BaseDevice_BUILD_DIR ${DEVICE_BUILD_DIR}/Core/BaseDevice)
+#set(BaseDevice_EXE ${BaseDevice_BUILD_DIR}/bin/BaseDevice)
 
 #-- LMCInterface
-set(LMCInterface_DIR ${DEVICE_SRC_DIR}/ITM/LMCInterface)
-set(LMCInterface_DOWNLOAD_DIR ${LMCInterface_DIR})
-set(LMCInterface_DOWNLOAD_DEST_DIR ${DEVICE_BUILD_DIR}/ITM)
-set(LMCInterface_BUILD_DIR ${DEVICE_BUILD_DIR}/ITM/LMCInterface)
-set(LMCInterface_EXE ${LMCInterface_BUILD_DIR}/bin/LMCInterface)
+#set(LMCInterface_DIR ${DEVICE_SRC_DIR}/ITM/LMCInterface)
+#set(LMCInterface_DOWNLOAD_DIR ${LMCInterface_DIR})
+#set(LMCInterface_DOWNLOAD_DEST_DIR ${DEVICE_BUILD_DIR}/ITM)
+#set(LMCInterface_BUILD_DIR ${DEVICE_BUILD_DIR}/ITM/LMCInterface)
+#set(LMCInterface_EXE ${LMCInterface_BUILD_DIR}/bin/LMCInterface)
 
 
 #-----------------------------------------------------------------------------------------------
@@ -198,13 +205,21 @@ add_dependencies(MoniDataAggregator Utils MessageParser SDD BaseDevice)
 target_link_libraries(MoniDataAggregator PUBLIC ${LINKED_LIBS} Utils MessageParser SDD BaseDevice)
 
 add_library(LogConsumer SHARED ${LogConsumer_SRCS})
-add_dependencies(LogConsumer Utils MessageParser SDD BaseDevice)
-target_link_libraries(LogConsumer PUBLIC ${LINKED_LIBS} Utils MessageParser SDD BaseDevice)
+##add_dependencies(LogConsumer Utils MessageParser SDD BaseDevice)
+##target_link_libraries(LogConsumer PUBLIC ${LINKED_LIBS} Utils MessageParser SDD BaseDevice)
+add_dependencies(LogConsumer Utils MessageParser SDD BaseDevice Scheduler)
+target_link_libraries(LogConsumer PUBLIC ${LINKED_LIBS} Utils MessageParser SDD BaseDevice Scheduler)
 
 add_library(SelfMonitoring SHARED ${SelfMonitoring_SRCS})
 add_dependencies(SelfMonitoring Utils MessageParser SDD BaseDevice)
 target_link_libraries(SelfMonitoring PUBLIC ${LINKED_LIBS} Utils MessageParser SDD BaseDevice)
 #-----------------------------------------------------------------------------------------------
+
+
+#--- POINTING LIBS --------
+add_library(PointingMgr SHARED ${PointingMgr_SRCS})
+add_dependencies(PointingMgr Utils MessageParser SDD BaseDevice)
+target_link_libraries(PointingMgr PUBLIC ${LINKED_LIBS} Utils MessageParser SDD BaseDevice)
 
 
 #-----------------------------------------------------------------------------------------------
@@ -292,7 +307,8 @@ set_target_properties(MoniDataAggregatorExe PROPERTIES OUTPUT_NAME MoniDataAggre
 
 ## LogConsumer
 add_executable(LogConsumerExe ${Main_LogConsumer_SRCS} ${LogConsumer_SRCS})
-target_link_libraries(LogConsumerExe Utils MessageParser SDD BaseDevice LogConsumer ${LINKED_LIBS})
+##target_link_libraries(LogConsumerExe Utils MessageParser SDD BaseDevice LogConsumer ${LINKED_LIBS})
+target_link_libraries(LogConsumerExe Utils MessageParser SDD BaseDevice Scheduler LogConsumer ${LINKED_LIBS})
 set_target_properties(LogConsumerExe PROPERTIES OUTPUT_NAME LogConsumer)
 
 ## SelfMonitoring
@@ -301,6 +317,63 @@ target_link_libraries(SelfMonitoringExe Utils MessageParser SDD BaseDevice SelfM
 set_target_properties(SelfMonitoringExe PROPERTIES OUTPUT_NAME SelfMonitoring)
 
 #########################
+
+###### POINTING ##########
+## PointingMgr
+add_executable(PointingMgrExe ${Main_PointingMgr_SRCS} ${PointingMgr_SRCS})
+target_link_libraries(PointingMgrExe Utils MessageParser SDD BaseDevice PointingMgr ${LINKED_LIBS})
+set_target_properties(PointingMgrExe PROPERTIES OUTPUT_NAME PointingMgr)
+#####################
+
+
+################################
+# Testing
+################################
+if (ENABLE_TEST)
+	# Append subdirs (headers & sources files are appended in subdirs)
+	set(TEST_INCLUDE_DIRS ${GTEST_INCLUDE_DIRS})
+	add_subdirectory(tests)
+
+	enable_testing()
+
+  # Include test & Google Test headers
+  include_directories(${TEST_INCLUDE_DIRS})
+
+	# Append external libs found 
+	list (APPEND LINKED_LIBS ${GTEST_BOTH_LIBRARIES})
+	message (STATUS "LINKED_LIBS: ${LINKED_LIBS}")
+	
+
+  ##############
+  # Unit Tests
+  ##############	
+	message (STATUS "SDDTEST_SRCS: ${SDDTEST_SRCS}")
+
+	add_executable(runSDDTests ${SDDTEST_SRCS})
+	add_dependencies(runSDDTests SDD)
+
+  # Standard linking to gtest stuff.
+	#target_link_libraries(runSDDTests ${LINKED_LIBS})
+	target_link_libraries(runSDDTests PUBLIC ${LINKED_LIBS} SDD)
+
+
+  # Extra linking for the project.
+	#  target_link_libraries(runUnitTests project1_lib)
+
+  # This is so you can do 'make test' to see all your tests run, instead of
+  # manually running the executable runUnitTests to see those specific tests.
+	##add_test(NAME TestSDD COMMAND runSDDTests)
+	add_test(TestSDD ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/runSDDTests)
+
+  # You can also omit NAME and COMMAND. The second argument could be some other
+  # test executable.
+#  add_test(that-other-test-I-made runUnitTests)
+endif()
+
+
+
+
+
 
 #-----------------------------------------------------------------------------------------------
 #---  INSTALL STUFF
@@ -313,6 +386,9 @@ install(FILES ${UTILS_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(FILES ${MSGPARSER_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(FILES ${SDD_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 #-----------------------------------------------------------------------------------------------
+
+
+
 
 
 
