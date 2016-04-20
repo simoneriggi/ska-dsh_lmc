@@ -43,6 +43,37 @@ static const char *RcsId = "$Id:  $";
 #include <BaseDevice.h>
 #include <BaseDeviceClass.h>
 
+#include <boost/log/core/core.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+
+#include <boost/log/common.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/attributes.hpp>
+#include <boost/log/sinks/sync_frontend.hpp>
+#include <boost/log/sinks/syslog_backend.hpp>
+
+
+namespace logging = boost::log;
+//namespace attrs = boost::log::attributes;
+//namespace src = boost::log::sources;
+//namespace sinks = boost::log::sinks;
+//namespace expr = boost::log::expressions;
+//namespace keywords = boost::log::keywords;
+
+//using boost::shared_ptr;
+
+#include <syslog.h>
+ 
+#include <log4cxx/logger.h>
+#include <log4cxx/xml/domconfigurator.h>
+#include <log4cxx/simplelayout.h>
+#include <log4cxx/patternlayout.h>
+#include <log4cxx/consoleappender.h>
+#include <log4cxx/propertyconfigurator.h>
+#include <log4cxx/net/syslogappender.h>
+#include <log4cxx/helpers/exception.h>
+
 /*----- PROTECTED REGION END -----*/	//	BaseDevice.cpp
 
 /**
@@ -54,10 +85,18 @@ static const char *RcsId = "$Id:  $";
 //  The following table gives the correspondence
 //  between command and method names.
 //
-//  Command name  |  Method name
+//  Command name      |  Method name
 //================================================================
-//  State         |  Inherited (no method)
-//  Status        |  Inherited (no method)
+//  State             |  Inherited (no method)
+//  Status            |  Inherited (no method)
+//  DevConfigure      |  dev_configure
+//  RestoreDevConfig  |  restore_dev_config
+//  RemoveAttr        |  remove_attr
+//  RemoveAttrs       |  remove_attrs
+//  SubscribeAttr     |  subscribe_attr
+//  UnsubscribeAttr   |  unsubscribe_attr
+//  SubscribeAttrs    |  subscribe_attrs
+//  UnsubscribeAttrs  |  unsubscribe_attrs
 //================================================================
 
 //================================================================
@@ -138,15 +177,97 @@ void BaseDevice::init_device()
 	
 	/*----- PROTECTED REGION END -----*/	//	BaseDevice::init_device_before
 	
-	//	No device property to be read from database
+
+	//	Get the device properties from database
+	get_device_property();
 	
 	/*----- PROTECTED REGION ID(BaseDevice::init_device) ENABLED START -----*/
 	
 	//	Initialize device
+
+	//## Init sys logger
+	if(InitSysLogger()<0){
+		ERROR_STREAM<<"BaseDevice::init_device(): ERROR: Failed to initialize sys logger!"<<endl;
+	}
 	
 	/*----- PROTECTED REGION END -----*/	//	BaseDevice::init_device
 }
 
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::get_device_property()
+ *	Description : Read database to initialize property data members.
+ */
+//--------------------------------------------------------
+void BaseDevice::get_device_property()
+{
+	/*----- PROTECTED REGION ID(BaseDevice::get_device_property_before) ENABLED START -----*/
+	
+	//	Initialize property data members
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::get_device_property_before
+
+
+	//	Read device properties from database.
+	Tango::DbData	dev_prop;
+	dev_prop.push_back(Tango::DbDatum("configFile"));
+	dev_prop.push_back(Tango::DbDatum("syslog_level"));
+	dev_prop.push_back(Tango::DbDatum("syslog_facility"));
+
+	//	is there at least one property to be read ?
+	if (dev_prop.size()>0)
+	{
+		//	Call database and extract values
+		if (Tango::Util::instance()->_UseDb==true)
+			get_db_device()->get_property(dev_prop);
+	
+		//	get instance on BaseDeviceClass to get class property
+		Tango::DbDatum	def_prop, cl_prop;
+		BaseDeviceClass	*ds_class =
+			(static_cast<BaseDeviceClass *>(get_device_class()));
+		int	i = -1;
+
+		//	Try to initialize configFile from class property
+		cl_prop = ds_class->get_class_property(dev_prop[++i].name);
+		if (cl_prop.is_empty()==false)	cl_prop  >>  configFile;
+		else {
+			//	Try to initialize configFile from default device value
+			def_prop = ds_class->get_default_device_property(dev_prop[i].name);
+			if (def_prop.is_empty()==false)	def_prop  >>  configFile;
+		}
+		//	And try to extract configFile value from database
+		if (dev_prop[i].is_empty()==false)	dev_prop[i]  >>  configFile;
+
+		//	Try to initialize syslog_level from class property
+		cl_prop = ds_class->get_class_property(dev_prop[++i].name);
+		if (cl_prop.is_empty()==false)	cl_prop  >>  syslog_level;
+		else {
+			//	Try to initialize syslog_level from default device value
+			def_prop = ds_class->get_default_device_property(dev_prop[i].name);
+			if (def_prop.is_empty()==false)	def_prop  >>  syslog_level;
+		}
+		//	And try to extract syslog_level value from database
+		if (dev_prop[i].is_empty()==false)	dev_prop[i]  >>  syslog_level;
+
+		//	Try to initialize syslog_facility from class property
+		cl_prop = ds_class->get_class_property(dev_prop[++i].name);
+		if (cl_prop.is_empty()==false)	cl_prop  >>  syslog_facility;
+		else {
+			//	Try to initialize syslog_facility from default device value
+			def_prop = ds_class->get_default_device_property(dev_prop[i].name);
+			if (def_prop.is_empty()==false)	def_prop  >>  syslog_facility;
+		}
+		//	And try to extract syslog_facility value from database
+		if (dev_prop[i].is_empty()==false)	dev_prop[i]  >>  syslog_facility;
+
+	}
+
+	/*----- PROTECTED REGION ID(BaseDevice::get_device_property_after) ENABLED START -----*/
+	
+	//	Check device property data members init
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::get_device_property_after
+}
 
 //--------------------------------------------------------
 /**
@@ -183,6 +304,236 @@ void BaseDevice::read_attr_hardware(TANGO_UNUSED(vector<long> &attr_list))
 
 //--------------------------------------------------------
 /**
+ *	Read attribute dynFloatAttr related method
+ *	Description: This is a template float dyn attr
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Scalar
+ */
+//--------------------------------------------------------
+void BaseDevice::read_dynFloatAttr(Tango::Attribute &attr)
+{
+	DEBUG_STREAM << "BaseDevice::read_dynFloatAttr(Tango::Attribute &attr) entering... " << endl;
+	Tango::DevFloat	*att_value = get_dynFloatAttr_data_ptr(attr.get_name());
+	/*----- PROTECTED REGION ID(BaseDevice::read_dynFloatAttr) ENABLED START -----*/
+	//	Set the attribute value
+	attr.set_value(att_value);
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::read_dynFloatAttr
+}
+//--------------------------------------------------------
+/**
+ *	Read attribute dynDoubleAttr related method
+ *	Description: 
+ *
+ *	Data type:	Tango::DevDouble
+ *	Attr type:	Scalar
+ */
+//--------------------------------------------------------
+void BaseDevice::read_dynDoubleAttr(Tango::Attribute &attr)
+{
+	DEBUG_STREAM << "BaseDevice::read_dynDoubleAttr(Tango::Attribute &attr) entering... " << endl;
+	Tango::DevDouble	*att_value = get_dynDoubleAttr_data_ptr(attr.get_name());
+	/*----- PROTECTED REGION ID(BaseDevice::read_dynDoubleAttr) ENABLED START -----*/
+	//	Set the attribute value
+	attr.set_value(att_value);
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::read_dynDoubleAttr
+}
+//--------------------------------------------------------
+/**
+ *	Read attribute dynStringAttr related method
+ *	Description: 
+ *
+ *	Data type:	Tango::DevString
+ *	Attr type:	Scalar
+ */
+//--------------------------------------------------------
+void BaseDevice::read_dynStringAttr(Tango::Attribute &attr)
+{
+	DEBUG_STREAM << "BaseDevice::read_dynStringAttr(Tango::Attribute &attr) entering... " << endl;
+	Tango::DevString	*att_value = get_dynStringAttr_data_ptr(attr.get_name());
+	/*----- PROTECTED REGION ID(BaseDevice::read_dynStringAttr) ENABLED START -----*/
+	//	Set the attribute value
+	attr.set_value(att_value);
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::read_dynStringAttr
+}
+//--------------------------------------------------------
+/**
+ *	Read attribute dynEnumAttr related method
+ *	Description: 
+ *
+ *	Data type:	Tango::DevEnum (dynEnumAttrEnum)
+ *	Attr type:	Scalar
+ */
+//--------------------------------------------------------
+void BaseDevice::read_dynEnumAttr(Tango::Attribute &attr)
+{
+	DEBUG_STREAM << "BaseDevice::read_dynEnumAttr(Tango::Attribute &attr) entering... " << endl;
+	Tango::DevEnum	*att_value = get_dynEnumAttr_data_ptr(attr.get_name());
+	/*----- PROTECTED REGION ID(BaseDevice::read_dynEnumAttr) ENABLED START -----*/
+	//	Set the attribute value
+	attr.set_value(att_value);
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::read_dynEnumAttr
+}
+//--------------------------------------------------------
+/**
+ *	Read attribute dynLongAttr related method
+ *	Description: 
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Scalar
+ */
+//--------------------------------------------------------
+void BaseDevice::read_dynLongAttr(Tango::Attribute &attr)
+{
+	DEBUG_STREAM << "BaseDevice::read_dynLongAttr(Tango::Attribute &attr) entering... " << endl;
+	Tango::DevLong	*att_value = get_dynLongAttr_data_ptr(attr.get_name());
+	/*----- PROTECTED REGION ID(BaseDevice::read_dynLongAttr) ENABLED START -----*/
+	//	Set the attribute value
+	attr.set_value(att_value);
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::read_dynLongAttr
+}
+//--------------------------------------------------------
+/**
+ *	Read attribute dynShortAttr related method
+ *	Description: 
+ *
+ *	Data type:	Tango::DevShort
+ *	Attr type:	Scalar
+ */
+//--------------------------------------------------------
+void BaseDevice::read_dynShortAttr(Tango::Attribute &attr)
+{
+	DEBUG_STREAM << "BaseDevice::read_dynShortAttr(Tango::Attribute &attr) entering... " << endl;
+	Tango::DevShort	*att_value = get_dynShortAttr_data_ptr(attr.get_name());
+	/*----- PROTECTED REGION ID(BaseDevice::read_dynShortAttr) ENABLED START -----*/
+	//	Set the attribute value
+	attr.set_value(att_value);
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::read_dynShortAttr
+}
+//--------------------------------------------------------
+/**
+ *	Read attribute dynFloatArrayAttr related method
+ *	Description: 
+ *
+ *	Data type:	Tango::DevFloat
+ *	Attr type:	Spectrum max = 1000
+ */
+//--------------------------------------------------------
+void BaseDevice::read_dynFloatArrayAttr(Tango::Attribute &attr)
+{
+	DEBUG_STREAM << "BaseDevice::read_dynFloatArrayAttr(Tango::Attribute &attr) entering... " << endl;
+	Tango::DevFloat	*att_value = get_dynFloatArrayAttr_data_ptr(attr.get_name());
+	/*----- PROTECTED REGION ID(BaseDevice::read_dynFloatArrayAttr) ENABLED START -----*/
+	//	Set the attribute value
+	Tango::Attribute& stored_attr = get_device_attr()->get_attr_by_name(attr.get_name().c_str());
+	long data_size= stored_attr.get_data_size();
+	DEBUG_STREAM<<"BaseDevice::read_dynFloatArrayAttr(): INFO: data_size="<<data_size<<" dimX="<<stored_attr.get_x()<<", maxDimX="<<stored_attr.get_max_dim_x()<<endl;
+
+	attr.set_value(att_value, data_size);
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::read_dynFloatArrayAttr
+}
+//--------------------------------------------------------
+/**
+ *	Read attribute dynDoubleArrayAttr related method
+ *	Description: 
+ *
+ *	Data type:	Tango::DevDouble
+ *	Attr type:	Spectrum max = 1000
+ */
+//--------------------------------------------------------
+void BaseDevice::read_dynDoubleArrayAttr(Tango::Attribute &attr)
+{
+	DEBUG_STREAM << "BaseDevice::read_dynDoubleArrayAttr(Tango::Attribute &attr) entering... " << endl;
+	Tango::DevDouble	*att_value = get_dynDoubleArrayAttr_data_ptr(attr.get_name());
+	/*----- PROTECTED REGION ID(BaseDevice::read_dynDoubleArrayAttr) ENABLED START -----*/
+	//	Set the attribute value
+	Tango::Attribute& stored_attr = get_device_attr()->get_attr_by_name(attr.get_name().c_str());
+	long data_size= stored_attr.get_data_size();
+	DEBUG_STREAM<<"BaseDevice::read_dynDoubleArrayAttr(): INFO: data_size="<<data_size<<" dimX="<<stored_attr.get_x()<<", maxDimX="<<stored_attr.get_max_dim_x()<<endl;
+
+	attr.set_value(att_value, data_size);
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::read_dynDoubleArrayAttr
+}
+//--------------------------------------------------------
+/**
+ *	Read attribute dynStringArrayAttr related method
+ *	Description: 
+ *
+ *	Data type:	Tango::DevString
+ *	Attr type:	Spectrum max = 1000
+ */
+//--------------------------------------------------------
+void BaseDevice::read_dynStringArrayAttr(Tango::Attribute &attr)
+{
+	DEBUG_STREAM << "BaseDevice::read_dynStringArrayAttr(Tango::Attribute &attr) entering... " << endl;
+	Tango::DevString	*att_value = get_dynStringArrayAttr_data_ptr(attr.get_name());
+	/*----- PROTECTED REGION ID(BaseDevice::read_dynStringArrayAttr) ENABLED START -----*/
+	//	Set the attribute value
+
+	Tango::Attribute& stored_attr = get_device_attr()->get_attr_by_name(attr.get_name().c_str());
+	long data_size= stored_attr.get_data_size();
+	DEBUG_STREAM<<"BaseDevice::read_dynStringArrayAttr(): INFO: data_size="<<data_size<<" dimX="<<stored_attr.get_x()<<", maxDimX="<<stored_attr.get_max_dim_x()<<endl;
+
+	attr.set_value(att_value, data_size);
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::read_dynStringArrayAttr
+}
+//--------------------------------------------------------
+/**
+ *	Read attribute dynLongArrayAttr related method
+ *	Description: 
+ *
+ *	Data type:	Tango::DevLong
+ *	Attr type:	Spectrum max = 1000
+ */
+//--------------------------------------------------------
+void BaseDevice::read_dynLongArrayAttr(Tango::Attribute &attr)
+{
+	DEBUG_STREAM << "BaseDevice::read_dynLongArrayAttr(Tango::Attribute &attr) entering... " << endl;
+	Tango::DevLong	*att_value = get_dynLongArrayAttr_data_ptr(attr.get_name());
+	/*----- PROTECTED REGION ID(BaseDevice::read_dynLongArrayAttr) ENABLED START -----*/
+	//	Set the attribute value
+	Tango::Attribute& stored_attr = get_device_attr()->get_attr_by_name(attr.get_name().c_str());
+	long data_size= stored_attr.get_data_size();
+	DEBUG_STREAM<<"BaseDevice::read_dynLongArrayAttr(): INFO: data_size="<<data_size<<" dimX="<<stored_attr.get_x()<<", maxDimX="<<stored_attr.get_max_dim_x()<<endl;
+
+	attr.set_value(att_value, data_size);
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::read_dynLongArrayAttr
+}
+//--------------------------------------------------------
+/**
+ *	Read attribute dynShortArrayAttr related method
+ *	Description: 
+ *
+ *	Data type:	Tango::DevShort
+ *	Attr type:	Spectrum max = 1000
+ */
+//--------------------------------------------------------
+void BaseDevice::read_dynShortArrayAttr(Tango::Attribute &attr)
+{
+	DEBUG_STREAM << "BaseDevice::read_dynShortArrayAttr(Tango::Attribute &attr) entering... " << endl;
+	Tango::DevShort	*att_value = get_dynShortArrayAttr_data_ptr(attr.get_name());
+	/*----- PROTECTED REGION ID(BaseDevice::read_dynShortArrayAttr) ENABLED START -----*/
+	//	Set the attribute value
+	Tango::Attribute& stored_attr = get_device_attr()->get_attr_by_name(attr.get_name().c_str());
+	long data_size= stored_attr.get_data_size();
+	DEBUG_STREAM<<"BaseDevice::read_dynShortArrayAttr(): INFO: data_size="<<data_size<<" dimX="<<stored_attr.get_x()<<", maxDimX="<<stored_attr.get_max_dim_x()<<endl;
+	
+	attr.set_value(att_value, data_size);
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::read_dynShortArrayAttr
+}
+//--------------------------------------------------------
+/**
  *	Method      : BaseDevice::add_dynamic_attributes()
  *	Description : Create the dynamic attributes if any
  *                for specified device.
@@ -190,6 +541,20 @@ void BaseDevice::read_attr_hardware(TANGO_UNUSED(vector<long> &attr_list))
 //--------------------------------------------------------
 void BaseDevice::add_dynamic_attributes()
 {
+	//	Example to add dynamic attribute:
+	//	Copy inside the following protected area to create instance(s) at startup.
+	//	add_dynFloatAttr_dynamic_attribute("MydynFloatAttrAttribute");
+	//	add_dynDoubleAttr_dynamic_attribute("MydynDoubleAttrAttribute");
+	//	add_dynStringAttr_dynamic_attribute("MydynStringAttrAttribute");
+	//	add_dynEnumAttr_dynamic_attribute("MydynEnumAttrAttribute");
+	//	add_dynLongAttr_dynamic_attribute("MydynLongAttrAttribute");
+	//	add_dynShortAttr_dynamic_attribute("MydynShortAttrAttribute");
+	//	add_dynFloatArrayAttr_dynamic_attribute("MydynFloatArrayAttrAttribute");
+	//	add_dynDoubleArrayAttr_dynamic_attribute("MydynDoubleArrayAttrAttribute");
+	//	add_dynStringArrayAttr_dynamic_attribute("MydynStringArrayAttrAttribute");
+	//	add_dynLongArrayAttr_dynamic_attribute("MydynLongArrayAttrAttribute");
+	//	add_dynShortArrayAttr_dynamic_attribute("MydynShortArrayAttrAttribute");
+	
 	/*----- PROTECTED REGION ID(BaseDevice::add_dynamic_attributes) ENABLED START -----*/
 	
 	//	Add your own code to create and add dynamic attributes if any
@@ -197,6 +562,303 @@ void BaseDevice::add_dynamic_attributes()
 	/*----- PROTECTED REGION END -----*/	//	BaseDevice::add_dynamic_attributes
 }
 
+//--------------------------------------------------------
+/**
+ *	Command DevConfigure related method
+ *	Description: Configure device using the input configuration string
+ *
+ *	@param argin A string with SDD configuration
+ *	@returns 
+ */
+//--------------------------------------------------------
+Tango::DevVarLongStringArray *BaseDevice::dev_configure(Tango::DevString argin)
+{
+	Tango::DevVarLongStringArray *argout;
+	DEBUG_STREAM << "BaseDevice::DevConfigure()  - " << device_name << endl;
+	/*----- PROTECTED REGION ID(BaseDevice::dev_configure) ENABLED START -----*/
+	
+	//	Add your own code
+	//## Init output arg
+	std::string reply= "Request executed with success";
+	long int ack= 0;
+	argout= new Tango::DevVarLongStringArray;
+	argout->lvalue.length(1);
+	argout->svalue.length(1);
+
+	//## Configure device from XML cnfig file
+	std::string input= std::string(argin);
+	if(ConfigureDevice(input,false)<0){
+		ERROR_STREAM<<"BaseDevice::DevConfigure(): ERROR: Failed to configure device from file "<<configFile<<"!"<<endl;
+		ack= -1;
+		reply= "Failed to configure device from file!";
+		argout->lvalue[0]= ack;
+		argout->svalue[0] = CORBA::string_dup(reply.c_str());
+		return argout;
+	}
+
+	argout->lvalue[0]= ack;
+	argout->svalue[0] = CORBA::string_dup(reply.c_str());
+
+
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::dev_configure
+	return argout;
+}
+//--------------------------------------------------------
+/**
+ *	Command RestoreDevConfig related method
+ *	Description: Restore device configuration to the default
+ *
+ *	@returns 
+ */
+//--------------------------------------------------------
+Tango::DevVarLongStringArray *BaseDevice::restore_dev_config()
+{
+	Tango::DevVarLongStringArray *argout;
+	DEBUG_STREAM << "BaseDevice::RestoreDevConfig()  - " << device_name << endl;
+	/*----- PROTECTED REGION ID(BaseDevice::restore_dev_config) ENABLED START -----*/
+	
+	//	Add your own code
+	//## Init output arg
+	std::string reply= "Request executed with success";
+	long int ack= 0;
+	argout= new Tango::DevVarLongStringArray;
+	argout->lvalue.length(1);
+	argout->svalue.length(1);
+
+	//## Configure device from XML cnfig file
+	if(ConfigureDevice(configFile,true)<0){
+		ERROR_STREAM<<"BaseDevice::RestoreDevConfig(): ERROR: Failed to configure device from file "<<configFile<<"!"<<endl;
+		ack= -1;
+		reply= "Failed to configure device from file!";
+		argout->lvalue[0]= ack;
+		argout->svalue[0] = CORBA::string_dup(reply.c_str());
+		return argout;
+	}
+
+	argout->lvalue[0]= ack;
+	argout->svalue[0] = CORBA::string_dup(reply.c_str());
+
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::restore_dev_config
+	return argout;
+}
+//--------------------------------------------------------
+/**
+ *	Command RemoveAttr related method
+ *	Description: Remove an attribute from the list
+ *
+ *	@param argin Attr name
+ *	@returns 
+ */
+//--------------------------------------------------------
+Tango::DevVarLongStringArray *BaseDevice::remove_attr(Tango::DevString argin)
+{
+	Tango::DevVarLongStringArray *argout;
+	DEBUG_STREAM << "BaseDevice::RemoveAttr()  - " << device_name << endl;
+	/*----- PROTECTED REGION ID(BaseDevice::remove_attr) ENABLED START -----*/
+	
+	//	Add your own code
+	//## Init return value
+	std::string reply= "Request executed with success";
+	long int ack= 0;
+	argout= new Tango::DevVarLongStringArray;
+	argout->lvalue.length(1);
+	argout->svalue.length(1);
+	
+	//## Check argin
+	if(argin==""){
+		ERROR_STREAM<<"BaseDevice::RemoveAttr(): ERROR: Invalid argument given (empty string)!"<<endl;
+		ack= -1;
+		reply= "Invalid argument given (empty string)!";
+		argout->lvalue[0]= ack;
+		argout->svalue[0] = CORBA::string_dup(reply.c_str());
+		return argout;
+	}
+	
+	//## Check if attribute is present in attr list
+	int data_type= -1;
+	try{
+		data_type= get_device_attr()->get_attr_by_name(argin).get_data_type();//return exception if attr is not found	 
+	}
+	catch(Tango::DevFailed& e){
+		WARN_STREAM<<"BaseDevice::RemoveAttr(): INFO: Attribute is not present in device attr_list! "<<endl;
+		ack= 1;
+		reply= "Attribute is not present in device attr_list!";
+		argout->lvalue[0]= ack;
+		argout->svalue[0] = CORBA::string_dup(reply.c_str());
+		return argout;
+	}	
+
+	//If attr is present remove it from device attribute_list
+	try{
+		if(data_type==Tango::DEV_FLOAT) remove_dynFloatAttr_dynamic_attribute(argin);
+		else if(data_type==Tango::DEV_DOUBLE) remove_dynDoubleAttr_dynamic_attribute(argin);
+		else if(data_type==Tango::DEV_ENUM) remove_dynEnumAttr_dynamic_attribute(argin);
+		else if(data_type==Tango::DEV_LONG) remove_dynLongAttr_dynamic_attribute(argin);
+		else if(data_type==Tango::DEV_SHORT) remove_dynShortAttr_dynamic_attribute(argin);
+		else if(data_type==Tango::DEV_STRING) remove_dynStringAttr_dynamic_attribute(argin);
+		else {
+			ERROR_STREAM<<"BaseDevice::RemoveAttr(): INFO: Unsupported attribute type! "<<endl;
+			ack= 1;
+			reply= "Failed to remove attr from device attr_list!";
+			argout->lvalue[0]= ack;
+			argout->svalue[0] = CORBA::string_dup(reply.c_str());
+			return argout;
+		}
+	}//close try block
+	catch(...){
+		ERROR_STREAM<<"BaseDevice::RemoveAttr(): INFO: Failed to remove attr from device attr_list! "<<endl;
+		ack= 1;
+		reply= "Failed to remove attr from device attr_list!";
+		argout->lvalue[0]= ack;
+		argout->svalue[0] = CORBA::string_dup(reply.c_str());
+		return argout;
+	}	
+	
+	//## Return value
+	argout->lvalue[0]= ack;
+	argout->svalue[0] = CORBA::string_dup(reply.c_str());
+
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::remove_attr
+	return argout;
+}
+//--------------------------------------------------------
+/**
+ *	Command RemoveAttrs related method
+ *	Description: Remove all attributes from the device
+ *
+ *	@returns 
+ */
+//--------------------------------------------------------
+Tango::DevVarLongStringArray *BaseDevice::remove_attrs()
+{
+	Tango::DevVarLongStringArray *argout;
+	DEBUG_STREAM << "BaseDevice::RemoveAttrs()  - " << device_name << endl;
+	/*----- PROTECTED REGION ID(BaseDevice::remove_attrs) ENABLED START -----*/
+	
+	//	Add your own code
+	//## Init return value
+	std::string reply= "Request executed with success";
+	long int ack= 0;
+	argout= new Tango::DevVarLongStringArray;
+	argout->lvalue.length(1);
+	argout->svalue.length(1);
+	
+	//## Delete all attributes
+	try {
+		std::vector<Tango::Attribute*> attribute_list= get_device_attr()->get_attribute_list();
+		INFO_STREAM<<"BaseDevice::RemoveAttrs(): INFO: "<<attribute_list.size()<<" dyn attrs present..."<<endl;
+
+		for(unsigned int i=0;i<attribute_list.size();i++){
+			std::string attr_name= attribute_list[i]->get_name();
+			if(attr_name=="State" || attr_name=="Status") continue;
+			Tango::DevVarLongStringArray* reply_output= remove_attr((char*)(attr_name.c_str()));
+			long int reply_ack= (*reply_output).lvalue[0];
+			std::string reply_info= std::string((*reply_output).svalue[0]);
+			if(reply_ack!=0){
+				WARN_STREAM<<"BaseDevice::RemoveAttrs(): WARN: Failed to remove attr with name: "<<attr_name<<" at position "<<i<<"!"<<endl;
+				ack= reply_ack;
+				std::stringstream sstream;
+				sstream<<"Failure to remove attributes ooccurred for attr "<<attr_name<<" (pos="<<i<<")...stop removing attributes!";
+				reply= sstream.str();
+				break;
+			}
+		}//end loop attrs	
+	}
+	catch(Tango::DevFailed& e){
+		ERROR_STREAM<<"BaseDevice::RemoveAttrs(): INFO: Failed to remove attrs from device attr_list! "<<endl;
+		ack= 1;
+		reply= "Failed to remove attrs from device attr_list!";
+		argout->lvalue[0]= ack;
+		argout->svalue[0] = CORBA::string_dup(reply.c_str());
+		return argout;
+	}
+
+	//Return value
+	argout->lvalue[0]= ack;
+	argout->svalue[0] = CORBA::string_dup(reply.c_str());
+
+
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::remove_attrs
+	return argout;
+}
+//--------------------------------------------------------
+/**
+ *	Command SubscribeAttr related method
+ *	Description: Subscribe attribute to remote monitoring point
+ *
+ *	@param argin 
+ *	@returns 
+ */
+//--------------------------------------------------------
+Tango::DevVarLongStringArray *BaseDevice::subscribe_attr(Tango::DevString argin)
+{
+	Tango::DevVarLongStringArray *argout;
+	DEBUG_STREAM << "BaseDevice::SubscribeAttr()  - " << device_name << endl;
+	/*----- PROTECTED REGION ID(BaseDevice::subscribe_attr) ENABLED START -----*/
+	
+	//	Add your own code
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::subscribe_attr
+	return argout;
+}
+//--------------------------------------------------------
+/**
+ *	Command UnsubscribeAttr related method
+ *	Description: Unsubscribe attr from remote monitoring point
+ *
+ *	@param argin Attr name
+ *	@returns 
+ */
+//--------------------------------------------------------
+Tango::DevVarLongStringArray *BaseDevice::unsubscribe_attr(Tango::DevString argin)
+{
+	Tango::DevVarLongStringArray *argout;
+	DEBUG_STREAM << "BaseDevice::UnsubscribeAttr()  - " << device_name << endl;
+	/*----- PROTECTED REGION ID(BaseDevice::unsubscribe_attr) ENABLED START -----*/
+	
+	//	Add your own code
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::unsubscribe_attr
+	return argout;
+}
+//--------------------------------------------------------
+/**
+ *	Command SubscribeAttrs related method
+ *	Description: Subscribe all attributes to remote monitoring points
+ *
+ *	@returns 
+ */
+//--------------------------------------------------------
+Tango::DevVarLongStringArray *BaseDevice::subscribe_attrs()
+{
+	Tango::DevVarLongStringArray *argout;
+	DEBUG_STREAM << "BaseDevice::SubscribeAttrs()  - " << device_name << endl;
+	/*----- PROTECTED REGION ID(BaseDevice::subscribe_attrs) ENABLED START -----*/
+	
+	//	Add your own code
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::subscribe_attrs
+	return argout;
+}
+//--------------------------------------------------------
+/**
+ *	Command UnsubscribeAttrs related method
+ *	Description: Unsubscribe all attributes from remote monitoring points
+ *
+ *	@returns 
+ */
+//--------------------------------------------------------
+Tango::DevVarLongStringArray *BaseDevice::unsubscribe_attrs()
+{
+	Tango::DevVarLongStringArray *argout;
+	DEBUG_STREAM << "BaseDevice::UnsubscribeAttrs()  - " << device_name << endl;
+	/*----- PROTECTED REGION ID(BaseDevice::unsubscribe_attrs) ENABLED START -----*/
+	
+	//	Add your own code
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::unsubscribe_attrs
+	return argout;
+}
 //--------------------------------------------------------
 /**
  *	Method      : BaseDevice::add_dynamic_commands()
@@ -216,6 +878,609 @@ void BaseDevice::add_dynamic_commands()
 /*----- PROTECTED REGION ID(BaseDevice::namespace_ending) ENABLED START -----*/
 
 //	Additional Methods
+int BaseDevice::ConfigureDevice(std::string& input,bool readFromFile){
+
+	INFO_STREAM<<"BaseDevice::ConfigureDevice(): INFO: Parsing XML configuration (device="<<this->name()<<"..."<<endl;
+
+	//## Parse attributes from XML
+	std::vector<SDD_ns::DeviceAttr*> attrCollection;
+	SDD_ns::SDD_XML sdd;
+	int status= sdd.Parse(attrCollection,input,readFromFile);
+	if(status<0){
+		ERROR_STREAM<<"BaseDevice::ConfigureDevice(): ERROR: Failed to parse the configuration file!"<<endl;
+		return -1;
+	}
+
+	INFO_STREAM<<"BaseDevice::ConfigureDevice(): INFO: "<<attrCollection.size()<<" attrs found in config..."<<endl;
+
+	//## Loop over monitoring points and create attribute dynamically
+	for(unsigned int i=0;i<attrCollection.size();i++){
+		Tango::AttrDataFormat attr_format= (attrCollection[i]->GetAttr())->get_format();
+		
+		int status= -1;
+
+		if(attr_format==Tango::SCALAR) {
+			status= AddScalarAttr(attrCollection[i]);
+		}
+		else if(attr_format==Tango::SPECTRUM){
+			status= AddSpectrumAttr(attrCollection[i]);
+		}
+		else if(attr_format==Tango::IMAGE){
+			status= -1;
+		}
+
+		if(status<0){
+			ERROR_STREAM<<"BaseDevice::ConfigureDevice(): ERROR: Failed to add dyn attribute: "<<attrCollection[i]->GetAttr()->get_name()<<"..."<<endl;
+			continue;
+		}
+	}//end loop
+	
+	return 0;
+
+}//close ConfigureDevice()
+
+
+
+int BaseDevice::AddScalarAttr(SDD_ns::DeviceAttr* device_attr){
+
+	if(!device_attr) {
+		ERROR_STREAM<<"BaseDevice::AddScalarAttr(): ERROR: Null ptr to moni point given!"<<endl;
+		return -1;
+	}
+	
+	Tango::Attr* attr= device_attr->GetAttr();
+	long int data_type= attr->get_type();
+	std::string attr_name= attr->get_name();
+	
+	INFO_STREAM<<"BaseDevice::AddScalarAttr(): INFO: Adding/modifying attribute: name="<<attr_name<<" data_type="<<data_type<<endl;
+	
+	//Check if attribute is already present in the attribute list
+	bool hasAttr= false;
+	try{
+		get_device_attr()->get_attr_by_name(attr_name.c_str());
+		hasAttr= true;
+		WARN_STREAM<<"BaseDevice::AddScalarAttr(): WARN: Attribute "<<attr_name<<" (type="<<data_type<<") already exist in the list, update it!"<<endl;
+	}
+	catch(Tango::DevFailed &e){//an exception is thrown if the attribute is not existing
+		hasAttr= false;
+		INFO_STREAM<<"BaseDevice::AddScalarAttr(): INFO: Attribute "<<attr_name<<" (type="<<data_type<<") is not present is the list, adding it!"<<endl;		
+	}
+	catch(...){//an exception is thrown if the attribute is not existing
+		hasAttr= false;
+		INFO_STREAM<<"BaseDevice::AddScalarAttr(): INFO: Unknown exception catched, Attribute "<<attr_name<<" (type="<<data_type<<") is not present is the list, adding it!"<<endl;		
+	}
+
+	//Create a new attr	
+	try{
+		
+		if(data_type==Tango::DEV_FLOAT){
+			if(!hasAttr) add_dynFloatAttr_dynamic_attribute(attr_name.c_str());
+				
+			//Set initial value
+			Tango::DevFloat* attr_value = get_dynFloatAttr_data_ptr(attr_name);
+			if(attr_value){
+				*attr_value= -1;
+			}
+
+			//Retrieve attr list
+			long attr_index= get_device_attr()->get_attr_ind_by_name(attr_name.c_str());
+			INFO_STREAM<<"BaseDevice::AddScalarAttr(): INFO: attr index="<<attr_index<<endl;
+		
+			std::vector<Tango::Attribute*> attribute_list= get_device_attr()->get_attribute_list();
+			DEBUG_STREAM<<"BaseDevice::AddScalarAttr(): INFO: pto 1"<<endl;
+		
+			//Set properties	
+			//Tango::MultiAttrProp<Tango::DevFloat> multi_attr_prop;
+			//device_attr->get_properties(multi_attr_prop);
+			Tango::MultiAttrProp<Tango::DevFloat>* multi_attr_prop= (dynamic_cast<SDD_ns::DeviceAttrImpl<Tango::DevFloat>*>(device_attr))->prop;
+
+			DEBUG_STREAM<<"BaseDevice::AddScalarAttr(): INFO: pto 3"<<endl;
+		
+			//attribute_list[attr_index]->set_properties(multi_attr_prop);
+			attribute_list[attr_index]->set_properties(*multi_attr_prop);
+			
+			DEBUG_STREAM<<"BaseDevice::AddScalarAttr(): INFO: pto 4"<<endl;
+		
+		}//close if float attr
+		
+		
+		else if(data_type==Tango::DEV_DOUBLE){
+			if(!hasAttr) add_dynDoubleAttr_dynamic_attribute(attr_name.c_str());
+			
+			//Set initial value
+			Tango::DevDouble* attr_value = get_dynDoubleAttr_data_ptr(attr_name);
+			if(attr_value){
+				*attr_value= -1;
+			}
+	
+			//Retrieve attr list
+			long attr_index= get_device_attr()->get_attr_ind_by_name(attr_name.c_str());
+			INFO_STREAM<<"BaseDevice::AddScalarAttr(): INFO: attr index="<<attr_index<<endl;
+		
+			std::vector<Tango::Attribute*> attribute_list= get_device_attr()->get_attribute_list();
+			INFO_STREAM<<"BaseDevice::AddScalarAttr(): INFO: pto 1"<<endl;
+		
+			//Set properties	
+			//Tango::MultiAttrProp<Tango::DevDouble> multi_attr_prop;
+			//device_attr->get_properties(multi_attr_prop);
+			Tango::MultiAttrProp<Tango::DevDouble>* multi_attr_prop= (dynamic_cast<SDD_ns::DeviceAttrImpl<Tango::DevDouble>*>(device_attr))->prop;
+
+			//attribute_list[attr_index]->set_properties(multi_attr_prop);
+			attribute_list[attr_index]->set_properties(*multi_attr_prop);
+			
+			INFO_STREAM<<"BaseDevice::AddScalarAttr(): INFO: pto 4"<<endl;
+		
+		}//close double attr
+
+		else if(data_type==Tango::DEV_ENUM){
+			if(!hasAttr) {
+				INFO_STREAM<<"BaseDevice::AddScalarAttr(): INFO: Adding new enum attribute with name: "<<attr_name<<endl;
+				add_dynEnumAttr_dynamic_attribute(attr_name.c_str());
+			}
+			
+			
+			//Retrieve attr list
+			long int attr_index= get_device_attr()->get_attr_ind_by_name(attr_name.c_str());
+			DEBUG_STREAM<<"BaseDevice::AddScalarAttr(): INFO: attr index="<<attr_index<<endl;
+		
+			std::vector<Tango::Attribute*> attribute_list= get_device_attr()->get_attribute_list();
+			DEBUG_STREAM<<"BaseDevice::AddScalarAttr(): INFO: pto 1"<<endl;
+		
+			if(!attribute_list[attr_index]){
+				WARN_STREAM<<"BaseDevice::AddScalarAttr(): INFO: Null ptr to attribute element!"<<endl;
+			}
+
+			//Set properties	
+			//Tango::MultiAttrProp<Tango::DevEnum> multi_attr_prop;
+			//device_attr->get_properties(multi_attr_prop);
+			Tango::MultiAttrProp<Tango::DevEnum>* multi_attr_prop= (dynamic_cast<SDD_ns::DeviceAttrImpl<Tango::DevEnum>*>(device_attr))->prop;
+		
+			DEBUG_STREAM<<"BaseDevice::AddScalarAttr(): INFO: Enum attr: min/max alarm="<<(multi_attr_prop->min_alarm).get_str()<<"/"<<(multi_attr_prop->max_alarm).get_str()<<endl;
+
+			//attribute_list[attr_index]->set_properties(multi_attr_prop);
+			attribute_list[attr_index]->set_properties(*multi_attr_prop);
+			DEBUG_STREAM<<"BaseDevice::AddScalarAttr(): INFO: pto 4"<<endl;
+		
+
+		}//close if enum attr
+
+		else if(data_type==Tango::DEV_SHORT){
+			if(!hasAttr) add_dynShortAttr_dynamic_attribute(attr_name.c_str());
+			
+			//Set initial value
+			Tango::DevShort* attr_value = get_dynShortAttr_data_ptr(attr_name);
+			if(attr_value){
+				*attr_value= -1;
+			}
+
+			//Retrieve attr list
+			long attr_index= get_device_attr()->get_attr_ind_by_name(attr_name.c_str());
+			DEBUG_STREAM<<"BaseDevice::AddScalarAttr(): INFO: attr index="<<attr_index<<endl;
+		
+			std::vector<Tango::Attribute*> attribute_list= get_device_attr()->get_attribute_list();
+			DEBUG_STREAM<<"BaseDevice::AddScalarAttr(): INFO: pto 1"<<endl;
+		
+			//Set properties	
+			//Tango::MultiAttrProp<Tango::DevShort> multi_attr_prop;
+			//device_attr->get_properties(multi_attr_prop);
+			Tango::MultiAttrProp<Tango::DevShort>* multi_attr_prop= (dynamic_cast<SDD_ns::DeviceAttrImpl<Tango::DevShort>*>(device_attr))->prop;
+		
+			//attribute_list[attr_index]->set_properties(multi_attr_prop);
+			attribute_list[attr_index]->set_properties(*multi_attr_prop);
+			DEBUG_STREAM<<"BaseDevice::AddScalarAttr(): INFO: pto 4"<<endl;
+		
+		}//close if short attr
+
+		else if(data_type==Tango::DEV_LONG){
+			if(!hasAttr) add_dynLongAttr_dynamic_attribute(attr_name.c_str());
+			
+			//Set initial value
+			Tango::DevLong* attr_value = get_dynLongAttr_data_ptr(attr_name);
+			if(attr_value){
+				*attr_value= -1;
+			}
+
+			//Retrieve attr list
+			long attr_index= get_device_attr()->get_attr_ind_by_name(attr_name.c_str());
+			INFO_STREAM<<"BaseDevice::AddScalarAttr(): INFO: attr index="<<attr_index<<endl;
+		
+			std::vector<Tango::Attribute*> attribute_list= get_device_attr()->get_attribute_list();
+			INFO_STREAM<<"BaseDevice::AddScalarAttr(): INFO: pto 1"<<endl;
+		
+			//Set properties	
+			//Tango::MultiAttrProp<Tango::DevLong> multi_attr_prop;
+			//device_attr->get_properties(multi_attr_prop);
+			Tango::MultiAttrProp<Tango::DevLong>* multi_attr_prop= (dynamic_cast< SDD_ns::DeviceAttrImpl<Tango::DevLong>* >(device_attr))->prop;
+			
+			//attribute_list[attr_index]->set_properties(multi_attr_prop);
+			attribute_list[attr_index]->set_properties(*multi_attr_prop);
+			DEBUG_STREAM<<"BaseDevice::AddScalarAttr(): INFO: pto 4"<<endl;
+		
+		}//close if long attr
+		else if(data_type==Tango::DEV_STRING){
+			if(!hasAttr) add_dynStringAttr_dynamic_attribute(attr_name.c_str());
+			
+			//Set initial value
+			Tango::DevString* attr_value = get_dynStringAttr_data_ptr(attr_name);
+			if(attr_value){
+				*attr_value= "";
+			}
+
+			//Retrieve attr list
+			long attr_index= get_device_attr()->get_attr_ind_by_name(attr_name.c_str());
+			DEBUG_STREAM<<"BaseDevice::AddScalarAttr(): INFO: attr index="<<attr_index<<endl;
+		
+			std::vector<Tango::Attribute*> attribute_list= get_device_attr()->get_attribute_list();
+			
+			//Set properties	
+			Tango::MultiAttrProp<Tango::DevString>* multi_attr_prop= (dynamic_cast<SDD_ns::DeviceAttrImpl<Tango::DevString>*>(device_attr))->prop;
+		
+			attribute_list[attr_index]->set_properties(*multi_attr_prop);		
+		}//close if short attr
+		else{
+			ERROR_STREAM<<"BaseDevice::AddScalarAttr(): ERROR: Unsupported data type given for dynamic attribute!"<<endl;
+			return -1;
+		}
+		
+
+		//Poll attribute?
+		if(device_attr->IsPolled()){
+			poll_attribute(attr_name,attr->get_polling_period());
+		}
+
+
+	}//close try block
+	catch(Tango::DevFailed &e){
+		Tango::Except::print_exception(e);
+		WARN_STREAM<<"BaseDevice::AddScalarAttr(): WARN: Adding attr "<<attr_name<<" failed!"<<endl;
+		return -1;
+	}
+	catch(...){
+		WARN_STREAM<<"BaseDevice::AddScalarAttr(): WARN: Adding attr "<<attr_name<<" failed!"<<endl;
+		return -1;
+	}
+
+
+	return 0;
+
+}//close AddScalarAttr()
+
+
+
+
+
+int BaseDevice::AddSpectrumAttr(SDD_ns::DeviceAttr* device_attr){
+
+	if(!device_attr) {
+		ERROR_STREAM<<"BaseDevice::AddSpectrumAttr(): ERROR: Null ptr to moni point given!"<<endl;
+		return -1;
+	}
+	
+	Tango::SpectrumAttr* attr= dynamic_cast<Tango::SpectrumAttr*>(device_attr->GetAttr());
+	long int data_type= attr->get_type();
+	std::string attr_name= attr->get_name();
+	long int data_size= attr->get_max_x();
+	
+	INFO_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: Adding/modifying attribute: name="<<attr_name<<" data_type="<<data_type<<" data_size="<<data_size<<endl;
+	
+	//Check if attribute is already present in the attribute list
+	bool hasAttr= false;
+	try{
+		get_device_attr()->get_attr_by_name(attr_name.c_str());
+		hasAttr= true;
+		WARN_STREAM<<"BaseDevice::AddSpectrumAttr(): WARN: Attribute "<<attr_name<<" (type="<<data_type<<") already exist in the list, update it!"<<endl;
+	}
+	catch(Tango::DevFailed &e){//an exception is thrown if the attribute is not existing
+		hasAttr= false;
+		INFO_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: Attribute "<<attr_name<<" (type="<<data_type<<") is not present is the list, adding it!"<<endl;		
+	}
+	catch(...){//an exception is thrown if the attribute is not existing
+		hasAttr= false;
+		INFO_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: Unknown exception catched, Attribute "<<attr_name<<" (type="<<data_type<<") is not present is the list, adding it!"<<endl;		
+	}
+
+	//Create a new attr	
+	try{
+		
+		if(data_type==Tango::DEV_FLOAT){
+			if(!hasAttr) add_dynFloatArrayAttr_dynamic_attribute(attr_name.c_str());
+				
+			//Set initial value
+			Tango::DevFloat* attr_value = get_dynFloatArrayAttr_data_ptr(attr_name);
+			if(attr_value){
+				for(int i=0;i<data_size;i++){
+					(attr_value)[i]= 0;
+				}
+			}
+
+			//Retrieve attr list
+			long attr_index= get_device_attr()->get_attr_ind_by_name(attr_name.c_str());
+			INFO_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: attr index="<<attr_index<<endl;
+		
+			std::vector<Tango::Attribute*> attribute_list= get_device_attr()->get_attribute_list();
+			INFO_STREAM<<"SEModule::add_scalar_attribute(): INFO: pto 1"<<endl;
+		
+			//Set properties	
+			Tango::MultiAttrProp<Tango::DevFloat>* multi_attr_prop= (dynamic_cast<SDD_ns::DeviceAttrImpl<Tango::DevFloat>*>(device_attr))->prop;
+			INFO_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: pto 3"<<endl;
+			attribute_list[attr_index]->set_properties(*multi_attr_prop);
+			INFO_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: pto 4"<<endl;
+
+			//Set value
+			attribute_list[attr_index]->set_value(attr_value,data_size);
+
+		}//close if float attr
+		
+		
+		else if(data_type==Tango::DEV_DOUBLE){
+			if(!hasAttr) add_dynDoubleArrayAttr_dynamic_attribute(attr_name.c_str());
+			
+			//Set initial value
+			Tango::DevDouble* attr_value = get_dynDoubleArrayAttr_data_ptr(attr_name);
+			if(attr_value){
+				for(int i=0;i<data_size;i++){
+					(attr_value)[i]= 0;
+				}
+			}
+			
+			//Retrieve attr list
+			long attr_index= get_device_attr()->get_attr_ind_by_name(attr_name.c_str());
+			DEBUG_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: attr index="<<attr_index<<endl;
+		
+			std::vector<Tango::Attribute*> attribute_list= get_device_attr()->get_attribute_list();
+			DEBUG_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: pto 1"<<endl;
+		
+			//Set properties	
+			Tango::MultiAttrProp<Tango::DevDouble>* multi_attr_prop= (dynamic_cast<SDD_ns::DeviceAttrImpl<Tango::DevDouble>*>(device_attr))->prop;
+			attribute_list[attr_index]->set_properties(*multi_attr_prop);
+			DEBUG_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: pto 4"<<endl;
+
+			//Set value
+			attribute_list[attr_index]->set_value(attr_value,data_size);
+		
+		}//close double attr
+
+
+		else if(data_type==Tango::DEV_SHORT){
+			if(!hasAttr) add_dynShortArrayAttr_dynamic_attribute(attr_name.c_str());
+			
+			//Set initial value
+			Tango::DevShort* attr_value = get_dynShortArrayAttr_data_ptr(attr_name);
+			if(attr_value){
+				for(int i=0;i<data_size;i++){
+					(attr_value)[i]= 0;
+				}
+			}
+
+			//Retrieve attr list
+			long attr_index= get_device_attr()->get_attr_ind_by_name(attr_name.c_str());
+			INFO_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: attr index="<<attr_index<<endl;
+		
+			std::vector<Tango::Attribute*> attribute_list= get_device_attr()->get_attribute_list();
+			INFO_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: pto 1"<<endl;
+		
+			//Set properties	
+			Tango::MultiAttrProp<Tango::DevShort>* multi_attr_prop= (dynamic_cast<SDD_ns::DeviceAttrImpl<Tango::DevShort>*>(device_attr))->prop;		
+			attribute_list[attr_index]->set_properties(*multi_attr_prop);
+			INFO_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: pto 4"<<endl;
+
+			//Set value
+			attribute_list[attr_index]->set_value(attr_value,data_size);
+		
+		}//close if short attr
+
+		else if(data_type==Tango::DEV_LONG){
+			if(!hasAttr) add_dynLongArrayAttr_dynamic_attribute(attr_name.c_str());
+			
+			//Set initial value
+			Tango::DevLong* attr_value = get_dynLongArrayAttr_data_ptr(attr_name);
+			if(attr_value){
+				for(int i=0;i<data_size;i++){
+					(attr_value)[i]= 0;
+				}
+			}
+			
+			//Retrieve attr list
+			long attr_index= get_device_attr()->get_attr_ind_by_name(attr_name.c_str());
+			INFO_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: attr index="<<attr_index<<endl;
+		
+			std::vector<Tango::Attribute*> attribute_list= get_device_attr()->get_attribute_list();
+			INFO_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: pto 1"<<endl;
+		
+			//Set properties	
+			Tango::MultiAttrProp<Tango::DevLong>* multi_attr_prop= (dynamic_cast< SDD_ns::DeviceAttrImpl<Tango::DevLong>* >(device_attr))->prop;
+			attribute_list[attr_index]->set_properties(*multi_attr_prop);
+			DEBUG_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: pto 4"<<endl;
+		
+			//Set value
+			attribute_list[attr_index]->set_value(attr_value,data_size);
+
+		}//close if long attr
+		else if(data_type==Tango::DEV_STRING){
+			if(!hasAttr) add_dynStringArrayAttr_dynamic_attribute(attr_name.c_str());
+			
+			//Set initial value
+			Tango::DevString* attr_value = get_dynStringArrayAttr_data_ptr(attr_name);
+			if(attr_value){
+				for(int i=0;i<data_size;i++){
+					(attr_value)[i]= CORBA::string_dup("NOT SET");
+				}
+			}
+		
+			//Retrieve attr list
+			long attr_index= get_device_attr()->get_attr_ind_by_name(attr_name.c_str());
+			INFO_STREAM<<"BaseDevice::AddSpectrumAttr(): INFO: attr index="<<attr_index<<endl;
+		
+			std::vector<Tango::Attribute*> attribute_list= get_device_attr()->get_attribute_list();
+			
+			//Set properties	
+			Tango::MultiAttrProp<Tango::DevString>* multi_attr_prop= (dynamic_cast<SDD_ns::DeviceAttrImpl<Tango::DevString>*>(device_attr))->prop;
+			attribute_list[attr_index]->set_properties(*multi_attr_prop);		
+	
+			//Set value
+			attribute_list[attr_index]->set_value(attr_value,data_size);
+
+		}//close if short attr
+		else{
+			ERROR_STREAM<<"BaseDevice::AddSpectrumAttr(): ERROR: Unsupported data type given for dynamic attribute!"<<endl;
+			return -1;
+		}
+		
+		//Poll attribute?
+		if(device_attr->IsPolled()){
+			poll_attribute(attr_name,attr->get_polling_period());
+		}
+
+
+	}//close try block
+	catch(Tango::DevFailed &e){
+		Tango::Except::print_exception(e);
+		WARN_STREAM<<"BaseDevice::AddSpectrumAttr(): WARN: Adding spectrum attr "<<attr_name<<" failed!"<<endl;
+		return -1;
+	}
+	catch(...){
+		WARN_STREAM<<"BaseDevice::AddSpectrumAttr(): WARN: Adding spectrum attr "<<attr_name<<" failed!"<<endl;
+		return -1;
+	}
+
+
+	return 0;
+
+}//close AddSpectrumAttribute()
+
+
+int BaseDevice::InitSysLogger(){
+
+	try {
+		std::string device_name= this->get_name();	
+		log4cxx::MDC::put( "device", device_name);
+		INFO_STREAM<<"BaseDevice::InitSysLogger(): device_name="<<device_name<<endl;
+
+		// Define static logger variable
+		log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("sysLogger"));
+	
+		log4cxx::LayoutPtr syslogLayout( new log4cxx::PatternLayout("%-5p [%l] %m%n") );
+		//log4cxx::LayoutPtr syslogLayout( new log4cxx::PatternLayout("[%X{pid}] %d{dd/MM/yy HH:mm:ss.SSS} %-5p %c %m%n") );
+
+		//Define appenders
+		std::string syslog_host= Tango::Util::instance()->get_host_name();
+		int syslog_facility_code= LOG_LOCAL6;
+		if(syslog_facility=="local0") syslog_facility_code= LOG_LOCAL0;
+		else if(syslog_facility=="local1") syslog_facility_code= LOG_LOCAL1;
+		else if(syslog_facility=="local2") syslog_facility_code= LOG_LOCAL2;
+		else if(syslog_facility=="local3") syslog_facility_code= LOG_LOCAL3;
+		else if(syslog_facility=="local4") syslog_facility_code= LOG_LOCAL4;
+		else if(syslog_facility=="local5") syslog_facility_code= LOG_LOCAL5;
+		else if(syslog_facility=="local6") syslog_facility_code= LOG_LOCAL6;
+		else if(syslog_facility=="local7") syslog_facility_code= LOG_LOCAL7;
+		else if(syslog_facility=="syslog") syslog_facility_code= LOG_SYSLOG;
+		else if(syslog_facility=="user") syslog_facility_code= LOG_USER;
+		else syslog_facility_code= LOG_LOCAL6;
+
+		cout<<"syslog_host="<<syslog_host<<", syslog_facility_code="<<syslog_facility_code<<endl;
+		//syslog_host= "riggi-VPCSA3J1E";
+		//syslog_host= "localhost";
+		//syslog_facility_code= LOG_LOCAL6;
+
+		log4cxx::AppenderPtr syslogAppender( new log4cxx::net::SyslogAppender(syslogLayout, syslog_host, syslog_facility_code));
+	
+		//Init logger
+		logger->addAppender(syslogAppender);
+	
+		//Set logging level
+		logger->setLevel(log4cxx::Level::toLevel(syslog_level,log4cxx::Level::getOff()));  // Log level set to OFF is a wrong name is given
+
+	}//close try block
+	catch(log4cxx::helpers::Exception& e){
+		ERROR_STREAM<<"BaseDevice::InitSysLogger(): ERROR: Failed to initialize syslogger (ex="<<e.what()<<")"<<endl;
+	}//close catch
+
+	return 0;
+
+}//close InitSysLogger()
+
+
+int BaseDevice::InitBoostSysLogger(){
+
+	/*
+	boost::shared_ptr< logging::core > core = logging::core::get();
+
+    // Create a backend
+    boost::shared_ptr< sinks::syslog_backend > backend(new sinks::syslog_backend(
+        keywords::facility = sinks::syslog::user,               1
+        keywords::use_impl = sinks::syslog::native              2
+    ));
+
+    // Set the straightforward level translator for the "Severity" attribute of type int
+    backend->set_severity_mapper(sinks::syslog::direct_severity_mapping< int >("Severity"));
+
+    // Wrap it into the frontend and register in the core.
+    // The backend requires synchronization in the frontend.
+    core->add_sink(boost::make_shared< sink_t >(backend));
+
+	*/
+
+
+
+
+	try {
+		
+		// Create a syslog sink
+    boost::shared_ptr<sink_t> sink(
+    	new sink_t(
+      	boost::log::keywords::use_impl = boost::log::sinks::syslog::native,
+        boost::log::keywords::facility = boost::log::sinks::syslog::local6
+			)
+		);
+		
+
+		/*
+		// Create a syslog sink
+    boost::shared_ptr<sink_t> sink(
+    	new sink_t(
+      	boost::log::keywords::use_impl = sinks::syslog::udp_socket_based,
+        boost::log::keywords::facility = boost::log::sinks::syslog::local6
+			)
+		);
+		*/
+
+			
+    sink->set_formatter(
+    	boost::log::expressions::format("native_syslog: %1%: %2%")
+      	% boost::log::expressions::attr< unsigned int >("RecordID")
+        % boost::log::expressions::smessage
+    );
+
+			
+    // We'll have to map our custom levels to the syslog levels
+    boost::log::sinks::syslog::custom_severity_mapping< severity_levels > mapping("Severity");
+    mapping[normal] = boost::log::sinks::syslog::info;
+    mapping[warning] = boost::log::sinks::syslog::warning;
+    mapping[error] = boost::log::sinks::syslog::critical;
+    sink->locked_backend()->set_severity_mapper(mapping);
+
+		
+    // Add the sink to the core
+    boost::log::core::get()->add_sink(sink);
+
+    // Add some attributes too
+    logging::core::get()->add_global_attribute("RecordID", boost::log::attributes::counter< unsigned int >());
+
+    // Do some logging
+    boost::log::sources::severity_logger< severity_levels > lg(boost::log::keywords::severity = normal);
+    BOOST_LOG_SEV(lg, normal) << "A syslog record with normal level";
+    BOOST_LOG_SEV(lg, warning) << "A syslog record with warning level";
+    BOOST_LOG_SEV(lg, error) << "A syslog record with error level";
+			
+	}//close try block
+  catch (std::exception& e) {
+  	ERROR_STREAM << "Failed to initialize sys logger (err=" << e.what() <<")!"<<endl;
+    return 1;
+  }
+
+	return 0;
+
+}//close InitBoostSysLogger()
 
 /*----- PROTECTED REGION END -----*/	//	BaseDevice::namespace_ending
 } //	namespace

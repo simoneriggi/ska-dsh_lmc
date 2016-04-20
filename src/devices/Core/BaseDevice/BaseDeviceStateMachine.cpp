@@ -50,10 +50,306 @@ namespace BaseDevice_ns
 //		Attributes Allowed Methods
 //=================================================
 
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_dynFloatAttr_allowed()
+ *	Description : Execution allowed for dynFloatAttr attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_dynFloatAttr_allowed(TANGO_UNUSED(Tango::AttReqType type))
+{
+
+	//	Not any excluded states for dynFloatAttr attribute in read access.
+	/*----- PROTECTED REGION ID(BaseDevice::dynFloatAttrStateAllowed_READ) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::dynFloatAttrStateAllowed_READ
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_dynDoubleAttr_allowed()
+ *	Description : Execution allowed for dynDoubleAttr attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_dynDoubleAttr_allowed(TANGO_UNUSED(Tango::AttReqType type))
+{
+
+	//	Not any excluded states for dynDoubleAttr attribute in read access.
+	/*----- PROTECTED REGION ID(BaseDevice::dynDoubleAttrStateAllowed_READ) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::dynDoubleAttrStateAllowed_READ
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_dynStringAttr_allowed()
+ *	Description : Execution allowed for dynStringAttr attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_dynStringAttr_allowed(TANGO_UNUSED(Tango::AttReqType type))
+{
+
+	//	Not any excluded states for dynStringAttr attribute in read access.
+	/*----- PROTECTED REGION ID(BaseDevice::dynStringAttrStateAllowed_READ) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::dynStringAttrStateAllowed_READ
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_dynEnumAttr_allowed()
+ *	Description : Execution allowed for dynEnumAttr attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_dynEnumAttr_allowed(TANGO_UNUSED(Tango::AttReqType type))
+{
+
+	//	Not any excluded states for dynEnumAttr attribute in read access.
+	/*----- PROTECTED REGION ID(BaseDevice::dynEnumAttrStateAllowed_READ) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::dynEnumAttrStateAllowed_READ
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_dynLongAttr_allowed()
+ *	Description : Execution allowed for dynLongAttr attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_dynLongAttr_allowed(TANGO_UNUSED(Tango::AttReqType type))
+{
+
+	//	Not any excluded states for dynLongAttr attribute in read access.
+	/*----- PROTECTED REGION ID(BaseDevice::dynLongAttrStateAllowed_READ) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::dynLongAttrStateAllowed_READ
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_dynShortAttr_allowed()
+ *	Description : Execution allowed for dynShortAttr attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_dynShortAttr_allowed(TANGO_UNUSED(Tango::AttReqType type))
+{
+
+	//	Not any excluded states for dynShortAttr attribute in read access.
+	/*----- PROTECTED REGION ID(BaseDevice::dynShortAttrStateAllowed_READ) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::dynShortAttrStateAllowed_READ
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_dynFloatArrayAttr_allowed()
+ *	Description : Execution allowed for dynFloatArrayAttr attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_dynFloatArrayAttr_allowed(TANGO_UNUSED(Tango::AttReqType type))
+{
+
+	//	Not any excluded states for dynFloatArrayAttr attribute in read access.
+	/*----- PROTECTED REGION ID(BaseDevice::dynFloatArrayAttrStateAllowed_READ) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::dynFloatArrayAttrStateAllowed_READ
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_dynDoubleArrayAttr_allowed()
+ *	Description : Execution allowed for dynDoubleArrayAttr attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_dynDoubleArrayAttr_allowed(TANGO_UNUSED(Tango::AttReqType type))
+{
+
+	//	Not any excluded states for dynDoubleArrayAttr attribute in read access.
+	/*----- PROTECTED REGION ID(BaseDevice::dynDoubleArrayAttrStateAllowed_READ) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::dynDoubleArrayAttrStateAllowed_READ
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_dynStringArrayAttr_allowed()
+ *	Description : Execution allowed for dynStringArrayAttr attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_dynStringArrayAttr_allowed(TANGO_UNUSED(Tango::AttReqType type))
+{
+
+	//	Not any excluded states for dynStringArrayAttr attribute in read access.
+	/*----- PROTECTED REGION ID(BaseDevice::dynStringArrayAttrStateAllowed_READ) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::dynStringArrayAttrStateAllowed_READ
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_dynLongArrayAttr_allowed()
+ *	Description : Execution allowed for dynLongArrayAttr attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_dynLongArrayAttr_allowed(TANGO_UNUSED(Tango::AttReqType type))
+{
+
+	//	Not any excluded states for dynLongArrayAttr attribute in read access.
+	/*----- PROTECTED REGION ID(BaseDevice::dynLongArrayAttrStateAllowed_READ) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::dynLongArrayAttrStateAllowed_READ
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_dynShortArrayAttr_allowed()
+ *	Description : Execution allowed for dynShortArrayAttr attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_dynShortArrayAttr_allowed(TANGO_UNUSED(Tango::AttReqType type))
+{
+
+	//	Not any excluded states for dynShortArrayAttr attribute in read access.
+	/*----- PROTECTED REGION ID(BaseDevice::dynShortArrayAttrStateAllowed_READ) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::dynShortArrayAttrStateAllowed_READ
+	return true;
+}
+
 
 //=================================================
 //		Commands Allowed Methods
 //=================================================
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_DevConfigure_allowed()
+ *	Description : Execution allowed for DevConfigure attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_DevConfigure_allowed(TANGO_UNUSED(const CORBA::Any &any))
+{
+	//	Not any excluded states for DevConfigure command.
+	/*----- PROTECTED REGION ID(BaseDevice::DevConfigureStateAllowed) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::DevConfigureStateAllowed
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_RestoreDevConfig_allowed()
+ *	Description : Execution allowed for RestoreDevConfig attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_RestoreDevConfig_allowed(TANGO_UNUSED(const CORBA::Any &any))
+{
+	//	Not any excluded states for RestoreDevConfig command.
+	/*----- PROTECTED REGION ID(BaseDevice::RestoreDevConfigStateAllowed) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::RestoreDevConfigStateAllowed
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_RemoveAttr_allowed()
+ *	Description : Execution allowed for RemoveAttr attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_RemoveAttr_allowed(TANGO_UNUSED(const CORBA::Any &any))
+{
+	//	Not any excluded states for RemoveAttr command.
+	/*----- PROTECTED REGION ID(BaseDevice::RemoveAttrStateAllowed) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::RemoveAttrStateAllowed
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_RemoveAttrs_allowed()
+ *	Description : Execution allowed for RemoveAttrs attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_RemoveAttrs_allowed(TANGO_UNUSED(const CORBA::Any &any))
+{
+	//	Not any excluded states for RemoveAttrs command.
+	/*----- PROTECTED REGION ID(BaseDevice::RemoveAttrsStateAllowed) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::RemoveAttrsStateAllowed
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_SubscribeAttr_allowed()
+ *	Description : Execution allowed for SubscribeAttr attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_SubscribeAttr_allowed(TANGO_UNUSED(const CORBA::Any &any))
+{
+	//	Not any excluded states for SubscribeAttr command.
+	/*----- PROTECTED REGION ID(BaseDevice::SubscribeAttrStateAllowed) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::SubscribeAttrStateAllowed
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_UnsubscribeAttr_allowed()
+ *	Description : Execution allowed for UnsubscribeAttr attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_UnsubscribeAttr_allowed(TANGO_UNUSED(const CORBA::Any &any))
+{
+	//	Not any excluded states for UnsubscribeAttr command.
+	/*----- PROTECTED REGION ID(BaseDevice::UnsubscribeAttrStateAllowed) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::UnsubscribeAttrStateAllowed
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_SubscribeAttrs_allowed()
+ *	Description : Execution allowed for SubscribeAttrs attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_SubscribeAttrs_allowed(TANGO_UNUSED(const CORBA::Any &any))
+{
+	//	Not any excluded states for SubscribeAttrs command.
+	/*----- PROTECTED REGION ID(BaseDevice::SubscribeAttrsStateAllowed) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::SubscribeAttrsStateAllowed
+	return true;
+}
+
+//--------------------------------------------------------
+/**
+ *	Method      : BaseDevice::is_UnsubscribeAttrs_allowed()
+ *	Description : Execution allowed for UnsubscribeAttrs attribute
+ */
+//--------------------------------------------------------
+bool BaseDevice::is_UnsubscribeAttrs_allowed(TANGO_UNUSED(const CORBA::Any &any))
+{
+	//	Not any excluded states for UnsubscribeAttrs command.
+	/*----- PROTECTED REGION ID(BaseDevice::UnsubscribeAttrsStateAllowed) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	BaseDevice::UnsubscribeAttrsStateAllowed
+	return true;
+}
 
 
 /*----- PROTECTED REGION ID(BaseDevice::BaseDeviceStateAllowed.AdditionalMethods) ENABLED START -----*/

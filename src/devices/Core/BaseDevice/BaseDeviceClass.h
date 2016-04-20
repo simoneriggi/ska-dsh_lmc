@@ -56,6 +56,343 @@ namespace BaseDevice_ns
 
 /*----- PROTECTED REGION END -----*/	//	BaseDeviceClass::classes for dynamic creation
 
+//=========================================
+//	Define classes for dynamic attributes
+//=========================================
+//	Attribute dynFloatAttr class definition
+class dynFloatAttrAttrib: public Tango::Attr
+{
+public:
+	dynFloatAttrAttrib(const string &att_name):Attr(att_name.c_str(), 
+			Tango::DEV_FLOAT, Tango::READ) {};
+	~dynFloatAttrAttrib() {};
+	virtual void read(Tango::DeviceImpl *dev,Tango::Attribute &att)
+		{(static_cast<BaseDevice *>(dev))->read_dynFloatAttr(att);}
+	virtual bool is_allowed(Tango::DeviceImpl *dev,Tango::AttReqType ty)
+		{return (static_cast<BaseDevice *>(dev))->is_dynFloatAttr_allowed(ty);}
+};
+
+//	Attribute dynDoubleAttr class definition
+class dynDoubleAttrAttrib: public Tango::Attr
+{
+public:
+	dynDoubleAttrAttrib(const string &att_name):Attr(att_name.c_str(), 
+			Tango::DEV_DOUBLE, Tango::READ) {};
+	~dynDoubleAttrAttrib() {};
+	virtual void read(Tango::DeviceImpl *dev,Tango::Attribute &att)
+		{(static_cast<BaseDevice *>(dev))->read_dynDoubleAttr(att);}
+	virtual bool is_allowed(Tango::DeviceImpl *dev,Tango::AttReqType ty)
+		{return (static_cast<BaseDevice *>(dev))->is_dynDoubleAttr_allowed(ty);}
+};
+
+//	Attribute dynStringAttr class definition
+class dynStringAttrAttrib: public Tango::Attr
+{
+public:
+	dynStringAttrAttrib(const string &att_name):Attr(att_name.c_str(), 
+			Tango::DEV_STRING, Tango::READ) {};
+	~dynStringAttrAttrib() {};
+	virtual void read(Tango::DeviceImpl *dev,Tango::Attribute &att)
+		{(static_cast<BaseDevice *>(dev))->read_dynStringAttr(att);}
+	virtual bool is_allowed(Tango::DeviceImpl *dev,Tango::AttReqType ty)
+		{return (static_cast<BaseDevice *>(dev))->is_dynStringAttr_allowed(ty);}
+};
+
+//	Attribute dynEnumAttr class definition
+class dynEnumAttrAttrib: public Tango::Attr
+{
+public:
+	dynEnumAttrAttrib(const string &att_name):Attr(att_name.c_str(), 
+			Tango::DEV_ENUM, Tango::READ) {};
+	~dynEnumAttrAttrib() {};
+	virtual void read(Tango::DeviceImpl *dev,Tango::Attribute &att)
+		{(static_cast<BaseDevice *>(dev))->read_dynEnumAttr(att);}
+	virtual bool is_allowed(Tango::DeviceImpl *dev,Tango::AttReqType ty)
+		{return (static_cast<BaseDevice *>(dev))->is_dynEnumAttr_allowed(ty);}
+	virtual bool same_type(const type_info &in_type) {return typeid(dynEnumAttrEnum) == in_type;}
+	virtual string get_enum_type() {return string("dynEnumAttrEnum");}
+};
+
+//	Attribute dynLongAttr class definition
+class dynLongAttrAttrib: public Tango::Attr
+{
+public:
+	dynLongAttrAttrib(const string &att_name):Attr(att_name.c_str(), 
+			Tango::DEV_LONG, Tango::READ) {};
+	~dynLongAttrAttrib() {};
+	virtual void read(Tango::DeviceImpl *dev,Tango::Attribute &att)
+		{(static_cast<BaseDevice *>(dev))->read_dynLongAttr(att);}
+	virtual bool is_allowed(Tango::DeviceImpl *dev,Tango::AttReqType ty)
+		{return (static_cast<BaseDevice *>(dev))->is_dynLongAttr_allowed(ty);}
+};
+
+//	Attribute dynShortAttr class definition
+class dynShortAttrAttrib: public Tango::Attr
+{
+public:
+	dynShortAttrAttrib(const string &att_name):Attr(att_name.c_str(), 
+			Tango::DEV_SHORT, Tango::READ) {};
+	~dynShortAttrAttrib() {};
+	virtual void read(Tango::DeviceImpl *dev,Tango::Attribute &att)
+		{(static_cast<BaseDevice *>(dev))->read_dynShortAttr(att);}
+	virtual bool is_allowed(Tango::DeviceImpl *dev,Tango::AttReqType ty)
+		{return (static_cast<BaseDevice *>(dev))->is_dynShortAttr_allowed(ty);}
+};
+
+//	Attribute dynFloatArrayAttr class definition
+class dynFloatArrayAttrAttrib: public Tango::SpectrumAttr
+{
+public:
+	dynFloatArrayAttrAttrib(const string &att_name):SpectrumAttr(att_name.c_str(), 
+			Tango::DEV_FLOAT, Tango::READ, 1000) {};
+	~dynFloatArrayAttrAttrib() {};
+	virtual void read(Tango::DeviceImpl *dev,Tango::Attribute &att)
+		{(static_cast<BaseDevice *>(dev))->read_dynFloatArrayAttr(att);}
+	virtual bool is_allowed(Tango::DeviceImpl *dev,Tango::AttReqType ty)
+		{return (static_cast<BaseDevice *>(dev))->is_dynFloatArrayAttr_allowed(ty);}
+};
+
+//	Attribute dynDoubleArrayAttr class definition
+class dynDoubleArrayAttrAttrib: public Tango::SpectrumAttr
+{
+public:
+	dynDoubleArrayAttrAttrib(const string &att_name):SpectrumAttr(att_name.c_str(), 
+			Tango::DEV_DOUBLE, Tango::READ, 1000) {};
+	~dynDoubleArrayAttrAttrib() {};
+	virtual void read(Tango::DeviceImpl *dev,Tango::Attribute &att)
+		{(static_cast<BaseDevice *>(dev))->read_dynDoubleArrayAttr(att);}
+	virtual bool is_allowed(Tango::DeviceImpl *dev,Tango::AttReqType ty)
+		{return (static_cast<BaseDevice *>(dev))->is_dynDoubleArrayAttr_allowed(ty);}
+};
+
+//	Attribute dynStringArrayAttr class definition
+class dynStringArrayAttrAttrib: public Tango::SpectrumAttr
+{
+public:
+	dynStringArrayAttrAttrib(const string &att_name):SpectrumAttr(att_name.c_str(), 
+			Tango::DEV_STRING, Tango::READ, 1000) {};
+	~dynStringArrayAttrAttrib() {};
+	virtual void read(Tango::DeviceImpl *dev,Tango::Attribute &att)
+		{(static_cast<BaseDevice *>(dev))->read_dynStringArrayAttr(att);}
+	virtual bool is_allowed(Tango::DeviceImpl *dev,Tango::AttReqType ty)
+		{return (static_cast<BaseDevice *>(dev))->is_dynStringArrayAttr_allowed(ty);}
+};
+
+//	Attribute dynLongArrayAttr class definition
+class dynLongArrayAttrAttrib: public Tango::SpectrumAttr
+{
+public:
+	dynLongArrayAttrAttrib(const string &att_name):SpectrumAttr(att_name.c_str(), 
+			Tango::DEV_LONG, Tango::READ, 1000) {};
+	~dynLongArrayAttrAttrib() {};
+	virtual void read(Tango::DeviceImpl *dev,Tango::Attribute &att)
+		{(static_cast<BaseDevice *>(dev))->read_dynLongArrayAttr(att);}
+	virtual bool is_allowed(Tango::DeviceImpl *dev,Tango::AttReqType ty)
+		{return (static_cast<BaseDevice *>(dev))->is_dynLongArrayAttr_allowed(ty);}
+};
+
+//	Attribute dynShortArrayAttr class definition
+class dynShortArrayAttrAttrib: public Tango::SpectrumAttr
+{
+public:
+	dynShortArrayAttrAttrib(const string &att_name):SpectrumAttr(att_name.c_str(), 
+			Tango::DEV_SHORT, Tango::READ, 1000) {};
+	~dynShortArrayAttrAttrib() {};
+	virtual void read(Tango::DeviceImpl *dev,Tango::Attribute &att)
+		{(static_cast<BaseDevice *>(dev))->read_dynShortArrayAttr(att);}
+	virtual bool is_allowed(Tango::DeviceImpl *dev,Tango::AttReqType ty)
+		{return (static_cast<BaseDevice *>(dev))->is_dynShortArrayAttr_allowed(ty);}
+};
+
+
+//=========================================
+//	Define classes for commands
+//=========================================
+//	Command DevConfigure class definition
+class DevConfigureClass : public Tango::Command
+{
+public:
+	DevConfigureClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out,
+				   const char        *in_desc,
+				   const char        *out_desc,
+				   Tango::DispLevel  level)
+	:Command(name,in,out,in_desc,out_desc, level)	{};
+
+	DevConfigureClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out)
+	:Command(name,in,out)	{};
+	~DevConfigureClass() {};
+	
+	virtual CORBA::Any *execute (Tango::DeviceImpl *dev, const CORBA::Any &any);
+	virtual bool is_allowed (Tango::DeviceImpl *dev, const CORBA::Any &any)
+	{return (static_cast<BaseDevice *>(dev))->is_DevConfigure_allowed(any);}
+};
+
+//	Command RestoreDevConfig class definition
+class RestoreDevConfigClass : public Tango::Command
+{
+public:
+	RestoreDevConfigClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out,
+				   const char        *in_desc,
+				   const char        *out_desc,
+				   Tango::DispLevel  level)
+	:Command(name,in,out,in_desc,out_desc, level)	{};
+
+	RestoreDevConfigClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out)
+	:Command(name,in,out)	{};
+	~RestoreDevConfigClass() {};
+	
+	virtual CORBA::Any *execute (Tango::DeviceImpl *dev, const CORBA::Any &any);
+	virtual bool is_allowed (Tango::DeviceImpl *dev, const CORBA::Any &any)
+	{return (static_cast<BaseDevice *>(dev))->is_RestoreDevConfig_allowed(any);}
+};
+
+//	Command RemoveAttr class definition
+class RemoveAttrClass : public Tango::Command
+{
+public:
+	RemoveAttrClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out,
+				   const char        *in_desc,
+				   const char        *out_desc,
+				   Tango::DispLevel  level)
+	:Command(name,in,out,in_desc,out_desc, level)	{};
+
+	RemoveAttrClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out)
+	:Command(name,in,out)	{};
+	~RemoveAttrClass() {};
+	
+	virtual CORBA::Any *execute (Tango::DeviceImpl *dev, const CORBA::Any &any);
+	virtual bool is_allowed (Tango::DeviceImpl *dev, const CORBA::Any &any)
+	{return (static_cast<BaseDevice *>(dev))->is_RemoveAttr_allowed(any);}
+};
+
+//	Command RemoveAttrs class definition
+class RemoveAttrsClass : public Tango::Command
+{
+public:
+	RemoveAttrsClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out,
+				   const char        *in_desc,
+				   const char        *out_desc,
+				   Tango::DispLevel  level)
+	:Command(name,in,out,in_desc,out_desc, level)	{};
+
+	RemoveAttrsClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out)
+	:Command(name,in,out)	{};
+	~RemoveAttrsClass() {};
+	
+	virtual CORBA::Any *execute (Tango::DeviceImpl *dev, const CORBA::Any &any);
+	virtual bool is_allowed (Tango::DeviceImpl *dev, const CORBA::Any &any)
+	{return (static_cast<BaseDevice *>(dev))->is_RemoveAttrs_allowed(any);}
+};
+
+//	Command SubscribeAttr class definition
+class SubscribeAttrClass : public Tango::Command
+{
+public:
+	SubscribeAttrClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out,
+				   const char        *in_desc,
+				   const char        *out_desc,
+				   Tango::DispLevel  level)
+	:Command(name,in,out,in_desc,out_desc, level)	{};
+
+	SubscribeAttrClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out)
+	:Command(name,in,out)	{};
+	~SubscribeAttrClass() {};
+	
+	virtual CORBA::Any *execute (Tango::DeviceImpl *dev, const CORBA::Any &any);
+	virtual bool is_allowed (Tango::DeviceImpl *dev, const CORBA::Any &any)
+	{return (static_cast<BaseDevice *>(dev))->is_SubscribeAttr_allowed(any);}
+};
+
+//	Command UnsubscribeAttr class definition
+class UnsubscribeAttrClass : public Tango::Command
+{
+public:
+	UnsubscribeAttrClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out,
+				   const char        *in_desc,
+				   const char        *out_desc,
+				   Tango::DispLevel  level)
+	:Command(name,in,out,in_desc,out_desc, level)	{};
+
+	UnsubscribeAttrClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out)
+	:Command(name,in,out)	{};
+	~UnsubscribeAttrClass() {};
+	
+	virtual CORBA::Any *execute (Tango::DeviceImpl *dev, const CORBA::Any &any);
+	virtual bool is_allowed (Tango::DeviceImpl *dev, const CORBA::Any &any)
+	{return (static_cast<BaseDevice *>(dev))->is_UnsubscribeAttr_allowed(any);}
+};
+
+//	Command SubscribeAttrs class definition
+class SubscribeAttrsClass : public Tango::Command
+{
+public:
+	SubscribeAttrsClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out,
+				   const char        *in_desc,
+				   const char        *out_desc,
+				   Tango::DispLevel  level)
+	:Command(name,in,out,in_desc,out_desc, level)	{};
+
+	SubscribeAttrsClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out)
+	:Command(name,in,out)	{};
+	~SubscribeAttrsClass() {};
+	
+	virtual CORBA::Any *execute (Tango::DeviceImpl *dev, const CORBA::Any &any);
+	virtual bool is_allowed (Tango::DeviceImpl *dev, const CORBA::Any &any)
+	{return (static_cast<BaseDevice *>(dev))->is_SubscribeAttrs_allowed(any);}
+};
+
+//	Command UnsubscribeAttrs class definition
+class UnsubscribeAttrsClass : public Tango::Command
+{
+public:
+	UnsubscribeAttrsClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out,
+				   const char        *in_desc,
+				   const char        *out_desc,
+				   Tango::DispLevel  level)
+	:Command(name,in,out,in_desc,out_desc, level)	{};
+
+	UnsubscribeAttrsClass(const char   *name,
+	               Tango::CmdArgType in,
+				   Tango::CmdArgType out)
+	:Command(name,in,out)	{};
+	~UnsubscribeAttrsClass() {};
+	
+	virtual CORBA::Any *execute (Tango::DeviceImpl *dev, const CORBA::Any &any);
+	virtual bool is_allowed (Tango::DeviceImpl *dev, const CORBA::Any &any)
+	{return (static_cast<BaseDevice *>(dev))->is_UnsubscribeAttrs_allowed(any);}
+};
+
+
 /**
  *	The BaseDeviceClass singleton definition
  */

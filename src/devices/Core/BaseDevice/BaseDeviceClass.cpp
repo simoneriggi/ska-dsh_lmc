@@ -158,6 +158,150 @@ BaseDeviceClass *BaseDeviceClass::instance()
 //===================================================================
 //	Command execution method calls
 //===================================================================
+//--------------------------------------------------------
+/**
+ * method : 		DevConfigureClass::execute()
+ * description : 	method to trigger the execution of the command.
+ *
+ * @param	device	The device on which the command must be executed
+ * @param	in_any	The command input data
+ *
+ *	returns The command output data (packed in the Any object)
+ */
+//--------------------------------------------------------
+CORBA::Any *DevConfigureClass::execute(Tango::DeviceImpl *device, const CORBA::Any &in_any)
+{
+	cout2 << "DevConfigureClass::execute(): arrived" << endl;
+	Tango::DevString argin;
+	extract(in_any, argin);
+	return insert((static_cast<BaseDevice *>(device))->dev_configure(argin));
+}
+
+//--------------------------------------------------------
+/**
+ * method : 		RestoreDevConfigClass::execute()
+ * description : 	method to trigger the execution of the command.
+ *
+ * @param	device	The device on which the command must be executed
+ * @param	in_any	The command input data
+ *
+ *	returns The command output data (packed in the Any object)
+ */
+//--------------------------------------------------------
+CORBA::Any *RestoreDevConfigClass::execute(Tango::DeviceImpl *device, TANGO_UNUSED(const CORBA::Any &in_any))
+{
+	cout2 << "RestoreDevConfigClass::execute(): arrived" << endl;
+	return insert((static_cast<BaseDevice *>(device))->restore_dev_config());
+}
+
+//--------------------------------------------------------
+/**
+ * method : 		RemoveAttrClass::execute()
+ * description : 	method to trigger the execution of the command.
+ *
+ * @param	device	The device on which the command must be executed
+ * @param	in_any	The command input data
+ *
+ *	returns The command output data (packed in the Any object)
+ */
+//--------------------------------------------------------
+CORBA::Any *RemoveAttrClass::execute(Tango::DeviceImpl *device, const CORBA::Any &in_any)
+{
+	cout2 << "RemoveAttrClass::execute(): arrived" << endl;
+	Tango::DevString argin;
+	extract(in_any, argin);
+	return insert((static_cast<BaseDevice *>(device))->remove_attr(argin));
+}
+
+//--------------------------------------------------------
+/**
+ * method : 		RemoveAttrsClass::execute()
+ * description : 	method to trigger the execution of the command.
+ *
+ * @param	device	The device on which the command must be executed
+ * @param	in_any	The command input data
+ *
+ *	returns The command output data (packed in the Any object)
+ */
+//--------------------------------------------------------
+CORBA::Any *RemoveAttrsClass::execute(Tango::DeviceImpl *device, TANGO_UNUSED(const CORBA::Any &in_any))
+{
+	cout2 << "RemoveAttrsClass::execute(): arrived" << endl;
+	return insert((static_cast<BaseDevice *>(device))->remove_attrs());
+}
+
+//--------------------------------------------------------
+/**
+ * method : 		SubscribeAttrClass::execute()
+ * description : 	method to trigger the execution of the command.
+ *
+ * @param	device	The device on which the command must be executed
+ * @param	in_any	The command input data
+ *
+ *	returns The command output data (packed in the Any object)
+ */
+//--------------------------------------------------------
+CORBA::Any *SubscribeAttrClass::execute(Tango::DeviceImpl *device, const CORBA::Any &in_any)
+{
+	cout2 << "SubscribeAttrClass::execute(): arrived" << endl;
+	Tango::DevString argin;
+	extract(in_any, argin);
+	return insert((static_cast<BaseDevice *>(device))->subscribe_attr(argin));
+}
+
+//--------------------------------------------------------
+/**
+ * method : 		UnsubscribeAttrClass::execute()
+ * description : 	method to trigger the execution of the command.
+ *
+ * @param	device	The device on which the command must be executed
+ * @param	in_any	The command input data
+ *
+ *	returns The command output data (packed in the Any object)
+ */
+//--------------------------------------------------------
+CORBA::Any *UnsubscribeAttrClass::execute(Tango::DeviceImpl *device, const CORBA::Any &in_any)
+{
+	cout2 << "UnsubscribeAttrClass::execute(): arrived" << endl;
+	Tango::DevString argin;
+	extract(in_any, argin);
+	return insert((static_cast<BaseDevice *>(device))->unsubscribe_attr(argin));
+}
+
+//--------------------------------------------------------
+/**
+ * method : 		SubscribeAttrsClass::execute()
+ * description : 	method to trigger the execution of the command.
+ *
+ * @param	device	The device on which the command must be executed
+ * @param	in_any	The command input data
+ *
+ *	returns The command output data (packed in the Any object)
+ */
+//--------------------------------------------------------
+CORBA::Any *SubscribeAttrsClass::execute(Tango::DeviceImpl *device, TANGO_UNUSED(const CORBA::Any &in_any))
+{
+	cout2 << "SubscribeAttrsClass::execute(): arrived" << endl;
+	return insert((static_cast<BaseDevice *>(device))->subscribe_attrs());
+}
+
+//--------------------------------------------------------
+/**
+ * method : 		UnsubscribeAttrsClass::execute()
+ * description : 	method to trigger the execution of the command.
+ *
+ * @param	device	The device on which the command must be executed
+ * @param	in_any	The command input data
+ *
+ *	returns The command output data (packed in the Any object)
+ */
+//--------------------------------------------------------
+CORBA::Any *UnsubscribeAttrsClass::execute(Tango::DeviceImpl *device, TANGO_UNUSED(const CORBA::Any &in_any))
+{
+	cout2 << "UnsubscribeAttrsClass::execute(): arrived" << endl;
+	return insert((static_cast<BaseDevice *>(device))->unsubscribe_attrs());
+}
+
 
 //===================================================================
 //	Properties management
@@ -227,6 +371,47 @@ void BaseDeviceClass::set_default_property()
 	//	Set Default Class Properties
 
 	//	Set Default device Properties
+	prop_name = "configFile";
+	prop_desc = "XML configuration file";
+	prop_def  = "";
+	vect_data.clear();
+	if (prop_def.length()>0)
+	{
+		Tango::DbDatum	data(prop_name);
+		data << vect_data ;
+		dev_def_prop.push_back(data);
+		add_wiz_dev_prop(prop_name, prop_desc,  prop_def);
+	}
+	else
+		add_wiz_dev_prop(prop_name, prop_desc);
+	prop_name = "syslog_level";
+	prop_desc = "Log level used for logging to syslog (OFF,TRACE,DEBUG,INFO,WARN,ERROR,FATAL)";
+	prop_def  = "OFF";
+	vect_data.clear();
+	vect_data.push_back("OFF");
+	if (prop_def.length()>0)
+	{
+		Tango::DbDatum	data(prop_name);
+		data << vect_data ;
+		dev_def_prop.push_back(data);
+		add_wiz_dev_prop(prop_name, prop_desc,  prop_def);
+	}
+	else
+		add_wiz_dev_prop(prop_name, prop_desc);
+	prop_name = "syslog_facility";
+	prop_desc = "LOG_USER: A miscellaneous user process\nLOG_MAIL: Mail\nLOG_DAEMON: A miscellaneous system daemon\nLOG_AUTH:  Security (authorization)\nLOG_SYSLOG: Syslog\nLOG_LPR: Central printer\nLOG_NEWS: Network news (e.g. Usenet)\nLOG_UUCP: UUCP\nLOG_CRON: Cron and At\nLOG_AUTHPRIV: Private security (authorization)\nLOG_FTP: Ftp server\nLOG_LOCAL0,1,2,3,4,5,6,7: Locally defined\n\n``auth``: LOG_AUTH\n``authpriv``: LOG_AUTHPRIV\n``cron``: LOG_CRON \n``daemon``: LOG_DAEMON\n``ftp``: LOG_FTP\n``kern``: LOG_KERN\n``lpr``: LOG_LPR\n``mail``: LOG_MAIL\n``mark``: INTERNAL_MARK\n``news``: LOG_NEWS\n``security``: LOG_AUTH,\n``syslog``: LOG_SYSLOG\n``user``: LOG_USER\n``uucp``: LOG_UUCP\n``local0``: LOG_LOCAL0\n``local1``: LOG_LOCAL1 \n``local2``: LOG_LOCAL2 \n``local3``: LOG_LOCAL3 \n``local4``: LOG_LOCAL4 \n``local5``: LOG_LOCAL5 \n``local6``: LOG_LOCAL6 \n``local7``: LOG_LOCAL7";
+	prop_def  = "local6";
+	vect_data.clear();
+	vect_data.push_back("local6");
+	if (prop_def.length()>0)
+	{
+		Tango::DbDatum	data(prop_name);
+		data << vect_data ;
+		dev_def_prop.push_back(data);
+		add_wiz_dev_prop(prop_name, prop_desc,  prop_def);
+	}
+	else
+		add_wiz_dev_prop(prop_name, prop_desc);
 }
 
 //--------------------------------------------------------
@@ -475,6 +660,78 @@ void BaseDeviceClass::command_factory()
 	
 	/*----- PROTECTED REGION END -----*/	//	BaseDeviceClass::command_factory_before
 
+
+	//	Command DevConfigure
+	DevConfigureClass	*pDevConfigureCmd =
+		new DevConfigureClass("DevConfigure",
+			Tango::DEV_STRING, Tango::DEVVAR_LONGSTRINGARRAY,
+			"A string with SDD configuration",
+			"",
+			Tango::OPERATOR);
+	command_list.push_back(pDevConfigureCmd);
+
+	//	Command RestoreDevConfig
+	RestoreDevConfigClass	*pRestoreDevConfigCmd =
+		new RestoreDevConfigClass("RestoreDevConfig",
+			Tango::DEV_VOID, Tango::DEVVAR_LONGSTRINGARRAY,
+			"",
+			"",
+			Tango::OPERATOR);
+	command_list.push_back(pRestoreDevConfigCmd);
+
+	//	Command RemoveAttr
+	RemoveAttrClass	*pRemoveAttrCmd =
+		new RemoveAttrClass("RemoveAttr",
+			Tango::DEV_STRING, Tango::DEVVAR_LONGSTRINGARRAY,
+			"Attr name",
+			"",
+			Tango::OPERATOR);
+	command_list.push_back(pRemoveAttrCmd);
+
+	//	Command RemoveAttrs
+	RemoveAttrsClass	*pRemoveAttrsCmd =
+		new RemoveAttrsClass("RemoveAttrs",
+			Tango::DEV_VOID, Tango::DEVVAR_LONGSTRINGARRAY,
+			"",
+			"",
+			Tango::OPERATOR);
+	command_list.push_back(pRemoveAttrsCmd);
+
+	//	Command SubscribeAttr
+	SubscribeAttrClass	*pSubscribeAttrCmd =
+		new SubscribeAttrClass("SubscribeAttr",
+			Tango::DEV_STRING, Tango::DEVVAR_LONGSTRINGARRAY,
+			"",
+			"",
+			Tango::OPERATOR);
+	command_list.push_back(pSubscribeAttrCmd);
+
+	//	Command UnsubscribeAttr
+	UnsubscribeAttrClass	*pUnsubscribeAttrCmd =
+		new UnsubscribeAttrClass("UnsubscribeAttr",
+			Tango::DEV_STRING, Tango::DEVVAR_LONGSTRINGARRAY,
+			"Attr name",
+			"",
+			Tango::OPERATOR);
+	command_list.push_back(pUnsubscribeAttrCmd);
+
+	//	Command SubscribeAttrs
+	SubscribeAttrsClass	*pSubscribeAttrsCmd =
+		new SubscribeAttrsClass("SubscribeAttrs",
+			Tango::DEV_VOID, Tango::DEVVAR_LONGSTRINGARRAY,
+			"",
+			"",
+			Tango::OPERATOR);
+	command_list.push_back(pSubscribeAttrsCmd);
+
+	//	Command UnsubscribeAttrs
+	UnsubscribeAttrsClass	*pUnsubscribeAttrsCmd =
+		new UnsubscribeAttrsClass("UnsubscribeAttrs",
+			Tango::DEV_VOID, Tango::DEVVAR_LONGSTRINGARRAY,
+			"",
+			"",
+			Tango::OPERATOR);
+	command_list.push_back(pUnsubscribeAttrsCmd);
 
 	/*----- PROTECTED REGION ID(BaseDeviceClass::command_factory_after) ENABLED START -----*/
 	
