@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="ASCII"?>
+<pogoDsl:PogoSystem xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:pogoDsl="http://www.esrf.fr/tango/pogo/PogoDsl">
+  <classes name="LMCLogger" pogoRevision="9.1">
+    <description description="LMCLogger device server" title="LMCLogger" sourcePath="/home/riggi/Analysis/SKAProjects/ska-dsh_lmc/src/devices/Logging/Logger" language="Cpp" filestogenerate="XMI   file,Code files,Protected Regions" license="GPL" copyright="" hasMandatoryProperty="false" hasConcreteProperty="true" hasAbstractCommand="false" hasAbstractAttribute="false">
+      <inheritances classname="Device_Impl" sourcePath=""/>
+      <identification contact="at gmail.com - simone.riggi" author="simone.riggi" emailDomain="gmail.com" classFamily="SoftwareSystem" siteSpecific="" platform="Unix Like" bus="Not Applicable" manufacturer="none" reference=""/>
+    </description>
+    <deviceProperties name="syslog_facility" description="LOG_USER: A miscellaneous user process&#xA;LOG_MAIL: Mail&#xA;LOG_DAEMON: A miscellaneous system daemon&#xA;LOG_AUTH:  Security (authorization)&#xA;LOG_SYSLOG: Syslog&#xA;LOG_LPR: Central printer&#xA;LOG_NEWS: Network news (e.g. Usenet)&#xA;LOG_UUCP: UUCP&#xA;LOG_CRON: Cron and At&#xA;LOG_AUTHPRIV: Private security (authorization)&#xA;LOG_FTP: Ftp server&#xA;LOG_LOCAL0,1,2,3,4,5,6,7: Locally defined&#xA;&#xA;``auth``: LOG_AUTH&#xA;``authpriv``: LOG_AUTHPRIV&#xA;``cron``: LOG_CRON &#xA;``daemon``: LOG_DAEMON&#xA;``ftp``: LOG_FTP&#xA;``kern``: LOG_KERN&#xA;``lpr``: LOG_LPR&#xA;``mail``: LOG_MAIL&#xA;``mark``: INTERNAL_MARK&#xA;``news``: LOG_NEWS&#xA;``security``: LOG_AUTH,&#xA;``syslog``: LOG_SYSLOG&#xA;``user``: LOG_USER&#xA;``uucp``: LOG_UUCP&#xA;``local0``: LOG_LOCAL0&#xA;``local1``: LOG_LOCAL1 &#xA;``local2``: LOG_LOCAL2 &#xA;``local3``: LOG_LOCAL3 &#xA;``local4``: LOG_LOCAL4 &#xA;``local5``: LOG_LOCAL5 &#xA;``local6``: LOG_LOCAL6 &#xA;``local7``: LOG_LOCAL7">
+      <type xsi:type="pogoDsl:StringType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <DefaultPropValue>local6</DefaultPropValue>
+    </deviceProperties>
+    <deviceProperties name="default_syslog_level" description="Default log level to be used at startup for logging to syslog">
+      <type xsi:type="pogoDsl:StringType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <DefaultPropValue>OFF</DefaultPropValue>
+    </deviceProperties>
+    <deviceProperties name="startup_enable_logfw" description="Enable log forwarding">
+      <type xsi:type="pogoDsl:ShortType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <DefaultPropValue>1</DefaultPropValue>
+    </deviceProperties>
+    <commands name="State" description="This command gets the device state (stored in its device_state data member) and returns it to the caller." execMethod="dev_state" displayLevel="OPERATOR" polledPeriod="0">
+      <argin description="none">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="Device state">
+        <type xsi:type="pogoDsl:StateType"/>
+      </argout>
+      <status abstract="true" inherited="true" concrete="true"/>
+    </commands>
+    <commands name="Status" description="This command gets the device status (stored in its device_status data member) and returns it to the caller." execMethod="dev_status" displayLevel="OPERATOR" polledPeriod="0">
+      <argin description="none">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="Device status">
+        <type xsi:type="pogoDsl:ConstStringType"/>
+      </argout>
+      <status abstract="true" inherited="true" concrete="true"/>
+    </commands>
+    <commands name="log" description="Command to handle logs received from devices" execMethod="log" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="Logging info received from emitter devices">
+        <type xsi:type="pogoDsl:StringArrayType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="SetFileLogLevel" description="Set log level used for logging to file(s)" execMethod="set_file_log_level" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="The requested log level&#xA;(0=OFF, 1=FATAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG)">
+        <type xsi:type="pogoDsl:IntType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="SetDeviceLogLevel" description="Set log level used for logging to device(s)" execMethod="set_device_log_level" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="The requested log level&#xA;(0=OFF, 1=FATAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG)">
+        <type xsi:type="pogoDsl:IntType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="SetConsoleLogLevel" description="Set log level used for logging to console" execMethod="set_console_log_level" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="The requested log level&#xA;(0=OFF, 1=FATAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG)">
+        <type xsi:type="pogoDsl:IntType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="SetSysLogLevel" description="Set the log level for logging to syslog" execMethod="set_sys_log_level" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="The requested log level&#xA;(0=OFF, 1=FATAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG)">
+        <type xsi:type="pogoDsl:StringType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="EnableLogForward" description="Enable/disable log forwarding" execMethod="enable_log_forward" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="0=disable&#xA;1=enable">
+        <type xsi:type="pogoDsl:ShortType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="TestLog" description="Generate a log in the device according to the given level.&#xA;Used for testing purposes." execMethod="test_log" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="Long arg&#xA;[0]: Level of log message&#xA;(0=OFF, 1=FATAL, 2=ERROR, 3=WARNING, 4=INFO, 5=DEBUG)&#xA;&#xA;String arg&#xA;[0]: log message">
+        <type xsi:type="pogoDsl:LongStringArrayType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <attributes name="syslog_level" attType="Scalar" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:StringType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="Log level used for logging to syslog (OFF,TRACE,DEBUG,INFO,WARN,ERROR,FATAL)" label="syslog_level" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <attributes name="enable_logfw" attType="Scalar" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:ShortType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="Flag signalling if log forwarding is active/inactive" label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <preferences docHome="./doc_html" makefileHome="/home/riggi/Software/TANGO/v9.2.2/share/pogo/preferences"/>
+  </classes>
+</pogoDsl:PogoSystem>
