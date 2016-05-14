@@ -1,5 +1,10 @@
+# SKA DSH.LMC
+<p align="center">
+  <img src="share/DishLogo.png" alt="SKA Dish logo"/>
+</p>
+
 ##**About**  
-SKA Dish LMC Control System Prototype
+DSH.LMC is the prototype monitoring and control (M&C) system for the dish antennas of the Square Kilometer Array (SKA).
 
 ##**Installation**  
 Install the project dependencies:  
