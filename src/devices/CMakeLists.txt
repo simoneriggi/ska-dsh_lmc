@@ -2,6 +2,8 @@ add_subdirectory(Core)
 add_subdirectory(ITM)
 add_subdirectory(Emulators)
 add_subdirectory(Monitoring)
+add_subdirectory(Logging)
+add_subdirectory(Pointing)
 
 ####### CORE #########
 # BaseDevice
@@ -72,14 +74,29 @@ set (SelfMonitoring_SRCS ${SelfMonitoring_SRCS} PARENT_SCOPE)
 set (SelfMonitoring_HEADERS ${SelfMonitoring_HEADERS} PARENT_SCOPE)
 set (SelfMonitoring_HEADERS_WPATH ${SelfMonitoring_HEADERS_WPATH} PARENT_SCOPE)
 set (Main_SelfMonitoring_SRCS ${Main_SelfMonitoring_SRCS} PARENT_SCOPE)
+###############################################
 
+###### LOGGING ##########
 # LogConsumer
 set (LogConsumer_SRCS ${LogConsumer_SRCS} PARENT_SCOPE)
 set (LogConsumer_HEADERS ${LogConsumer_HEADERS} PARENT_SCOPE)
 set (LogConsumer_HEADERS_WPATH ${LogConsumer_HEADERS_WPATH} PARENT_SCOPE)
 set (Main_LogConsumer_SRCS ${Main_LogConsumer_SRCS} PARENT_SCOPE)
+
+# Logger
+set (Logger_SRCS ${Logger_SRCS} PARENT_SCOPE)
+set (Logger_HEADERS ${Logger_HEADERS} PARENT_SCOPE)
+set (Logger_HEADERS_WPATH ${Logger_HEADERS_WPATH} PARENT_SCOPE)
+set (Main_Logger_SRCS ${Main_Logger_SRCS} PARENT_SCOPE)
 ############################
 
+####### POINTING #########
+# PointingMgr
+set (PointingMgr_SRCS ${PointingMgr_SRCS} PARENT_SCOPE)
+set (PointingMgr_HEADERS ${PointingMgr_HEADERS} PARENT_SCOPE)
+set (PointingMgr_HEADERS_WPATH ${PointingMgr_HEADERS_WPATH} PARENT_SCOPE)
+set (Main_PointingMgr_SRCS ${Main_PointingMgr_SRCS} PARENT_SCOPE)
+#####################
 
 set (INCLUDE_DIRS ${INCLUDE_DIRS} PARENT_SCOPE)
 
