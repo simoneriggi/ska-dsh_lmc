@@ -210,6 +210,11 @@ add_library(LogConsumer SHARED ${LogConsumer_SRCS})
 add_dependencies(LogConsumer Utils MessageParser SDD BaseDevice Scheduler)
 target_link_libraries(LogConsumer PUBLIC ${LINKED_LIBS} Utils MessageParser SDD BaseDevice Scheduler)
 
+add_library(LMCLogger SHARED ${Logger_SRCS})
+add_dependencies(LMCLogger Utils MessageParser SDD BaseDevice)
+target_link_libraries(LMCLogger PUBLIC ${LINKED_LIBS} Utils MessageParser SDD BaseDevice)
+
+
 add_library(SelfMonitoring SHARED ${SelfMonitoring_SRCS})
 add_dependencies(SelfMonitoring Utils MessageParser SDD BaseDevice)
 target_link_libraries(SelfMonitoring PUBLIC ${LINKED_LIBS} Utils MessageParser SDD BaseDevice)
@@ -310,6 +315,13 @@ add_executable(LogConsumerExe ${Main_LogConsumer_SRCS} ${LogConsumer_SRCS})
 ##target_link_libraries(LogConsumerExe Utils MessageParser SDD BaseDevice LogConsumer ${LINKED_LIBS})
 target_link_libraries(LogConsumerExe Utils MessageParser SDD BaseDevice Scheduler LogConsumer ${LINKED_LIBS})
 set_target_properties(LogConsumerExe PROPERTIES OUTPUT_NAME LogConsumer)
+
+## LMCLogger
+add_executable(LMCLoggerExe ${Main_Logger_SRCS} ${Logger_SRCS})
+set_target_properties(LMCLoggerExe PROPERTIES COMPILE_DEFINITIONS "APPENDERS_HAVE_LEVEL_THRESHOLD")
+target_compile_definitions(LMCLoggerExe PRIVATE APPENDERS_HAVE_LEVEL_THRESHOLD=1)
+target_link_libraries(LMCLoggerExe Utils MessageParser SDD BaseDevice LMCLogger ${LINKED_LIBS})
+set_target_properties(LMCLoggerExe PROPERTIES OUTPUT_NAME LMCLogger)
 
 ## SelfMonitoring
 add_executable(SelfMonitoringExe ${Main_SelfMonitoring_SRCS} ${SelfMonitoring_SRCS})
