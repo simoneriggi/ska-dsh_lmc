@@ -189,6 +189,34 @@ void BaseDevice::init_device()
 	if(InitSysLogger()<0){
 		ERROR_STREAM<<"BaseDevice::init_device(): ERROR: Failed to initialize sys logger!"<<endl;
 	}
+
+
+	//## DEBUG TEST
+	//Create and connect to device interface
+	INFO_STREAM<<"BaseDevice::init_device(): INFO: Trying to connect to interface device..."<<endl;
+	std::string interface_device_address= "DSHLMC/DSEmulator/id1";
+	try {
+		interface_device = new Tango::DeviceProxy(interface_device_address);
+  	if (interface_device->ping()) {
+    	INFO_STREAM << "BaseDevice::init_device(): INFO: Connected to interface device " + interface_device_address << endl;
+    }
+	}//close try block
+  catch(Tango::DevFailed e) {
+  	set_state(Tango::FAULT);
+   	set_status("Failed to connect to device " + interface_device_address);
+    WARN_STREAM << "BaseDevice::init_device(): Failed to connect to device " + interface_device_address << endl;
+  }
+
+	//Init mutex
+	mutex= 0;
+  mutex = new omni_mutex();
+
+	//Create callback
+	attr_callback= new AttrCallBack(this,mutex);
+
+	
+	//###########
+
 	
 	/*----- PROTECTED REGION END -----*/	//	BaseDevice::init_device
 }
@@ -797,7 +825,73 @@ Tango::DevVarLongStringArray *BaseDevice::subscribe_attr(Tango::DevString argin)
 	/*----- PROTECTED REGION ID(BaseDevice::subscribe_attr) ENABLED START -----*/
 	
 	//	Add your own code
+	//Init return value
+	std::string reply= "Request executed with success";
+	long int ack= 0;
+	argout= new Tango::DevVarLongStringArray;
+	argout->lvalue.length(1);
+	argout->svalue.length(1);
+
+
+	//Subscribe
+	std::string interface_device_address= "DSHLMC/DSEmulator/id1";
+	try {
+		//int event_id = interface_device->subscribe_event("tmpWriteAttr", Tango::PERIODIC_EVENT, attr_callback);
+  	int event_id = interface_device->subscribe_event("tmpWriteAttr", Tango::CHANGE_EVENT, attr_callback);
+  }	
+ 	catch(Tango::DevFailed e) {
+  	set_state(Tango::FAULT);
+   	set_status("Failed to subscribe to device " + interface_device_address);
+    WARN_STREAM << "BaseDevice::init_device(): Failed to subscribe to device " + interface_device_address << endl;
+  }
+
+	try {
+		int state_event_id = interface_device->subscribe_event("State", Tango::CHANGE_EVENT, attr_callback);
+		//int state_event_id = interface_device->subscribe_event("State", Tango::PERIODIC_EVENT, attr_callback);
+  }	
+ 	catch(Tango::DevFailed e) {
+		Tango::Except::print_exception(e); 
+  	set_state(Tango::FAULT);
+   	set_status("Failed to subscribe to device " + interface_device_address);
+    WARN_STREAM << "BaseDevice::init_device(): Failed to subscribe to device " + interface_device_address << " (STATE EVENT)"<<endl;
+  }
+
+	try {
+		int status_event_id = interface_device->subscribe_event("Status", Tango::CHANGE_EVENT, attr_callback);
+		//int status_event_id = interface_device->subscribe_event("Status", Tango::PERIODIC_EVENT, attr_callback);
+  }	
+ 	catch(Tango::DevFailed e) {
+		Tango::Except::print_exception(e); 
+  	set_state(Tango::FAULT);
+   	set_status("Failed to subscribe to device " + interface_device_address);
+    WARN_STREAM << "BaseDevice::init_device(): Failed to subscribe to device " + interface_device_address << " (STATUS EVENT)"<<endl;
+  }
+
+	/*
 	
+	
+	//Subscribe to all attributes
+	INFO_STREAM<<"BaseDevice::SubscribeAttr() - "<<mpCollection.size()<<" dyn attrs present..."<<endl;
+	for(unsigned int i=0;i<mpCollection.size();i++){
+		std::string attr_name= mpCollection[i]->alias_name;
+		Tango::DevVarLongStringArray* reply_output= subscribe_dyn_attribute((char*)(attr_name.c_str()));
+		long int reply_ack= (*reply_output).lvalue[0];
+		std::string reply_info= std::string((*reply_output).svalue[0]);
+		if(reply_ack!=0){
+			WARN_STREAM<<"SEModule::subscribe_dyn_attributes(): WARN: Failed to subscribe events for attr: "<<attr_name<<" at position "<<i<<"!"<<endl;
+			ack= reply_ack;
+			std::stringstream sstream;
+			sstream<<"Failed to subscribe events for attr: "<<attr_name<<" (pos="<<i<<")...stop subscribing to attributes!";
+			reply= sstream.str();
+			break;
+		}
+	}	
+	*/
+
+	//Return value
+	argout->lvalue[0]= ack;
+	argout->svalue[0] = CORBA::string_dup(reply.c_str());
+
 	/*----- PROTECTED REGION END -----*/	//	BaseDevice::subscribe_attr
 	return argout;
 }
@@ -919,7 +1013,53 @@ int BaseDevice::ConfigureDevice(std::string& input,bool readFromFile){
 
 }//close ConfigureDevice()
 
+int BaseDevice::SubscribeAttr(SDD_ns::DeviceAttr* device_attr){
+	
+	//Check input attr given
+	if(!device_attr) {
+		ERROR_STREAM<<"BaseDevice::SubscribeAttr(): ERROR: Null ptr to moni point given!"<<endl;
+		return -1;
+	}
+	
+	//Get field values
+	Tango::Attr* attr= device_attr->GetAttr();
+	//Tango::MultiProp* prop= device_attr->GetProp();
+	long int data_type= attr->get_type();
+	std::string attr_name= attr->get_name();
+	
+	bool hasSubscriptionPoint= device_attr->HasSubscriptionPoint();
+	std::string subscribe_endpoint= device_attr->GetSubscriptionEndPoint();
+	std::string subscribe_attr= device_attr->GetSubscriptionAttrName();
 
+	//Check if a subscription point is present
+	if(!hasSubscriptionPoint){
+		WARN_STREAM<<"BaseDevice::SubscribeAttr(): WARN: No subscription point, nothing to be subscribed! "<<endl;
+		return 0;
+	}
+
+	//Check if attribute is present in attr list
+	try{
+		get_device_attr()->get_attr_by_name(attr_name.c_str());//return exception if attr is not found	 
+	}
+	catch(...){
+		WARN_STREAM<<"BaseDevice::SubscribeAttr(): WARN: Cannot find attribute "<<attr_name<<" in device attr list, nothing to be subscribed! "<<endl;
+		return -1;
+	}	
+	
+	INFO_STREAM<<"BaseDevice::SubscribeAttr(): INFO: Subscribing attribute: name="<<attr_name<<" data_type="<<data_type<<" to device "<<subscribe_endpoint<<" (attr="<<subscribe_attr<<")"<<endl;
+	
+	/*
+	//Start subscribing
+	//--> CHANGE_EVENT?
+	bool hasChangeEvent= attr->
+	if(){
+		int event_id = interface_device->subscribe_event(attr_name, Tango::CHANGE_EVENT, attr_callback);
+	}
+	*/
+
+	return 0;
+
+}//close SubscribeAttr()
 
 int BaseDevice::AddScalarAttr(SDD_ns::DeviceAttr* device_attr){
 

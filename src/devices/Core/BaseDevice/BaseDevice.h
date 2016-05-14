@@ -38,6 +38,8 @@
 #ifndef BaseDevice_H
 #define BaseDevice_H
 
+#include <AttrCallBack.h>
+
 #include <tango.h>
 
 #include <MoniPoint.h>
@@ -95,7 +97,7 @@ typedef _dynEnumAttrEnum dynEnumAttrEnum;
 /*----- PROTECTED REGION ID(BaseDevice::Additional Class Declarations) ENABLED START -----*/
 
 //	Additional Class Declarations
-
+	class AttrCallBack;
 /*----- PROTECTED REGION END -----*/	//	BaseDevice::Additional Class Declarations
 
 class BaseDevice : public TANGO_BASE_CLASS
@@ -466,6 +468,7 @@ public:
 		int ConfigureDevice(std::string& config,bool readFromFile);
 		int AddScalarAttr(SDD_ns::DeviceAttr* device_attr);
 		int AddSpectrumAttr(SDD_ns::DeviceAttr* device_attr);
+		int SubscribeAttr(SDD_ns::DeviceAttr* device_attr);
 
 		int InitBoostSysLogger();
 		virtual int InitSysLogger();
@@ -544,6 +547,12 @@ public:
 		enum severity_levels {normal,warning,error};
 		typedef sinks::synchronous_sink< sinks::syslog_backend > sink_t;
 
+
+		omni_mutex* mutex;		
+		Tango::DeviceProxy* interface_device;
+		AttrCallBack* attr_callback;
+
+	friend class AttrCallBack;
 
 /*----- PROTECTED REGION END -----*/	//	BaseDevice::Additional Method prototypes
 };

@@ -10,8 +10,9 @@ set(THIS_SRCS ${THIS_SRCS}
   ${BaseDevice_SRC_DIR}/BaseDevice.cpp 
   ${BaseDevice_SRC_DIR}/BaseDeviceStateMachine.cpp 
   ${BaseDevice_SRC_DIR}/ClassFactory.cpp
-	${BaseDevice_SRC_DIR}/BaseDeviceDynAttrUtils.cpp
-	${BaseDevice_SRC_DIR}/ConfigManager.cpp 
+  ${BaseDevice_SRC_DIR}/BaseDeviceDynAttrUtils.cpp
+  ${BaseDevice_SRC_DIR}/ConfigManager.cpp 
+  ${BaseDevice_SRC_DIR}/AttrCallBack.cpp
 )
 
 file(GLOB_RECURSE THIS_HEADERS ${BaseDevice_INC_DIR}/*.h)
