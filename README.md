@@ -1,6 +1,6 @@
 # SKA DSH.LMC
 <p align="center">
-  <img src="share/DishLogo.png" alt="SKA Dish logo"/>
+  <img src="share/SKAAntennas.png" alt="SKA Dish logo"/>
 </p>
 
 ##**About**  
