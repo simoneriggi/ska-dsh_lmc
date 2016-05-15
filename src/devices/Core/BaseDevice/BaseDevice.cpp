@@ -1518,10 +1518,7 @@ int BaseDevice::InitSysLogger(){
 		else syslog_facility_code= LOG_LOCAL6;
 
 		cout<<"syslog_host="<<syslog_host<<", syslog_facility_code="<<syslog_facility_code<<endl;
-		//syslog_host= "riggi-VPCSA3J1E";
-		//syslog_host= "localhost";
-		//syslog_facility_code= LOG_LOCAL6;
-
+		
 		log4cxx::AppenderPtr syslogAppender( new log4cxx::net::SyslogAppender(syslogLayout, syslog_host, syslog_facility_code));
 	
 		//Init logger
