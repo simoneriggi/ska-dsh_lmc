@@ -43,15 +43,11 @@ static const char *RcsId = "$Id:  $";
 #include <LMCLogger.h>
 #include <LMCLoggerClass.h>
 
-//#ifndef APPENDERS_HAVE_LEVEL_THRESHOLD
-//	#define APPENDERS_HAVE_LEVEL_THRESHOLD 1
-//#endif
-
 #include <tango.h>
 #include <log4tango/Appender.hh>
-
 #include <syslog.h>
  
+//Log4Cxx headers
 #include <log4cxx/logger.h>
 #include <log4cxx/xml/domconfigurator.h>
 #include <log4cxx/simplelayout.h>
@@ -60,6 +56,26 @@ static const char *RcsId = "$Id:  $";
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/net/syslogappender.h>
 #include <log4cxx/helpers/exception.h>
+
+//Boost headers
+#define BOOST_LOG_DYN_LINK 1 // necessary when linking the boost_log library dynamically
+#include <boost/log/core/core.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/log/common.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/attributes.hpp>
+#include <boost/log/sinks/sink.hpp>
+#include <boost/log/sinks/sync_frontend.hpp>
+#include <boost/log/sinks/syslog_backend.hpp>
+#include <boost/log/trivial.hpp>
+//namespace logging = boost::log;
+
+//typedef boost::log::sinks::synchronous_sink< boost::log::sinks::syslog_backend > sink_t;
+
+
+#include <unistd.h>
+#include <limits.h>
 
 
 /*----- PROTECTED REGION END -----*/	//	LMCLogger.cpp
@@ -178,9 +194,21 @@ void LMCLogger::init_device()
 	
 	//	Initialize device
 	//## Init sys logger
-	if(InitSysLogger()<0){
-		ERROR_STREAM<<"BaseDevice::init_device(): ERROR: Failed to initialize sys logger!"<<endl;
+	if(syslog_logger==eLOG4CXX){//init log4cxx logger
+		DEBUG_STREAM<<"LMCLogger::init_device() - Using log4cxx syslogger..."<<endl;		
+		if(InitSysLogger()<0) ERROR_STREAM<<"LMCLogger::init_device() - Failed to initialize sys logger!"<<endl;
 	}
+	else if(syslog_logger==eBOOST){//Init boost sys logger
+		DEBUG_STREAM<<"LMCLogger::init_device() - Using boost syslogger..."<<endl;	
+		if(InitBoostSysLogger()<0) ERROR_STREAM<<"LMCLogger::init_device() - Failed to initialize sys logger!"<<endl;	
+	}
+	else {
+		WARN_STREAM<<"LMCLogger::init_device() - Invalid syslogger library specified (logger="<<syslog_logger<<"), using default..."<<endl;
+		if(InitSysLogger()<0){
+			ERROR_STREAM<<"LMCLogger::init_device() - Failed to initialize sys logger!"<<endl;
+		}
+	}
+
 
 	//## Init log forwarder flag from property
 	*attr_enable_logfw_read= startup_enable_logfw;
@@ -209,6 +237,7 @@ void LMCLogger::get_device_property()
 	dev_prop.push_back(Tango::DbDatum("syslog_facility"));
 	dev_prop.push_back(Tango::DbDatum("default_syslog_level"));
 	dev_prop.push_back(Tango::DbDatum("startup_enable_logfw"));
+	dev_prop.push_back(Tango::DbDatum("syslog_logger"));
 
 	//	is there at least one property to be read ?
 	if (dev_prop.size()>0)
@@ -255,6 +284,17 @@ void LMCLogger::get_device_property()
 		}
 		//	And try to extract startup_enable_logfw value from database
 		if (dev_prop[i].is_empty()==false)	dev_prop[i]  >>  startup_enable_logfw;
+
+		//	Try to initialize syslog_logger from class property
+		cl_prop = ds_class->get_class_property(dev_prop[++i].name);
+		if (cl_prop.is_empty()==false)	cl_prop  >>  syslog_logger;
+		else {
+			//	Try to initialize syslog_logger from default device value
+			def_prop = ds_class->get_default_device_property(dev_prop[i].name);
+			if (def_prop.is_empty()==false)	def_prop  >>  syslog_logger;
+		}
+		//	And try to extract syslog_logger value from database
+		if (dev_prop[i].is_empty()==false)	dev_prop[i]  >>  syslog_logger;
 
 	}
 
@@ -578,18 +618,40 @@ void LMCLogger::set_sys_log_level(Tango::DevString argin)
 	}//close if
 
 	//Set attribute value
-	//std::string old_syslog_level= *attr_syslog_level_read;
 	*attr_syslog_level_read= CORBA::string_dup(argin);
 
 	//If everything went fine, change the syslog level
 	try {
-		log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("sysLogger"));
-		log4cxx::LevelPtr thisLogLevel= logger->getLevel();
-		if(!thisLogLevel) thisLogLevel= log4cxx::Level::getOff();
+		std::string dev_name= this->get_name();
+		std::transform(dev_name.begin(), dev_name.end(),dev_name.begin(), ::tolower);	
+
+		if(syslog_logger==eLOG4CXX){
+			//log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("sysLogger"));
+			log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger(dev_name.c_str()));
+			log4cxx::LevelPtr thisLogLevel= logger->getLevel();
+			if(!thisLogLevel) thisLogLevel= log4cxx::Level::getOff();
 		
-		//logger->setLevel(log4cxx::Level::toLevel(*attr_syslog_level_read,log4cxx::Level::getOff()));  // Log level set to OFF if a wrong name is given
-		logger->setLevel(log4cxx::Level::toLevel(*attr_syslog_level_read,thisLogLevel));  // Log level set to OFF if a wrong name is given
-	}
+			//logger->setLevel(log4cxx::Level::toLevel(*attr_syslog_level_read,log4cxx::Level::getOff()));  // Log level set to OFF if a wrong name is given
+			logger->setLevel(log4cxx::Level::toLevel(*attr_syslog_level_read,thisLogLevel));  // Log level set to OFF if a wrong name is given
+		}//close if
+		else if(syslog_logger==eBOOST){
+			int filter_level= GetBoostLevelFromString(*attr_syslog_level_read);
+			if(filter_level==boost_off) boost::log::core::get()->set_logging_enabled(false);
+			else boost::log::core::get()->set_logging_enabled(true);
+			boost::log::core::get()->set_filter( severity <= filter_level );
+
+		}//close if
+		else{
+			//log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("sysLogger"));
+			log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger(dev_name.c_str()));
+			log4cxx::LevelPtr thisLogLevel= logger->getLevel();
+			if(!thisLogLevel) thisLogLevel= log4cxx::Level::getOff();
+		
+			//logger->setLevel(log4cxx::Level::toLevel(*attr_syslog_level_read,log4cxx::Level::getOff()));  // Log level set to OFF if a wrong name is given
+			logger->setLevel(log4cxx::Level::toLevel(*attr_syslog_level_read,thisLogLevel));  // Log level set to OFF if a wrong name is given
+		}
+
+	}//close try block
 	catch(log4cxx::helpers::Exception& e){
 		ERROR_STREAM<<"LMCLogger::InitSysLogger() - Failed to set syslog level (ex="<<e.what()<<")"<<endl;
 		return;
@@ -661,13 +723,17 @@ void LMCLogger::test_log(const Tango::DevVarLongStringArray *argin)
 	if((argin->svalue).length()<=0 || (argin->lvalue).length()<=0)
 		return;
 
+	DEBUG_STREAM<<"className="<<this->get_name()<<", "<<this->name()<<", "<<this->get_device_class()->get_name()<<endl;
+
 	try{
 		//Convert given Tango log level in log4 code
 		Tango::DevLong log_level= (argin->lvalue)[0];
 		log4tango::Level::Value log4_level= Tango::Logging::tango_to_log4tango_level(static_cast<Tango::LogLevel>(log_level), true);
 
 		//Generate log + syslog (if enabled)
-		LOG(log4_level,(argin->svalue)[0]);
+		if(syslog_logger==eLOG4CXX) LOG(log4_level,(argin->svalue)[0]);
+		else if(syslog_logger==eBOOST)	LOG_BOOST(log4_level,(argin->svalue)[0]);
+		else LOG(log4_level,(argin->svalue)[0]);
 	}
 	catch(Tango::DevFailed& e){
 		WARN_STREAM << "LMCLogger::TestLog()  - Failed to generate test log!" << endl;
@@ -701,17 +767,29 @@ int LMCLogger::InitSysLogger(){
 
 	//Create and configure syslog appender
 	try {
-		std::string device_name= this->get_name();	
-		log4cxx::MDC::put( "device", device_name);
+		//Set hostname
+		char hostname[HOST_NAME_MAX];
+		gethostname(hostname, HOST_NAME_MAX);
+		std::string syslog_host(hostname); 
+		//std::string syslog_host= Tango::Util::instance()->get_host_name();
+		log4cxx::MDC::put( "hostname", syslog_host);
+
+		//Set device name
+		std::string dev_name= this->get_name();
+		std::transform(dev_name.begin(), dev_name.end(),dev_name.begin(), ::tolower);	
+		log4cxx::MDC::put( "device", dev_name);
 		
 		// Define static logger variable
-		log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("sysLogger"));
-	
-		log4cxx::LayoutPtr syslogLayout( new log4cxx::PatternLayout("%-5p [%l] %m%n") );
+		//log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger("sysLogger"));
+		log4cxx::LoggerPtr logger(log4cxx::Logger::getLogger(dev_name.c_str()));
+		//log4cxx::LayoutPtr syslogLayout( new log4cxx::PatternLayout("%-5p [%l] %m%n") );
+		//log4cxx::LayoutPtr syslogLayout( new log4cxx::PatternLayout("[%c] [%X{device}] %-5p [%l] %m%n") );
 		//log4cxx::LayoutPtr syslogLayout( new log4cxx::PatternLayout("[%X{pid}] %d{dd/MM/yy HH:mm:ss.SSS} %-5p %c %m%n") );
+		//log4cxx::LayoutPtr syslogLayout( new log4cxx::PatternLayout("[%c] [%X{device}] [%l] %m%n") );
+		log4cxx::LayoutPtr syslogLayout( new log4cxx::PatternLayout("%c %m%n") );
+		
 
-		//Define appenders
-		std::string syslog_host= Tango::Util::instance()->get_host_name();
+		//Set facility
 		int syslog_facility_code= LOG_LOCAL6;
 		if(syslog_facility=="local0") syslog_facility_code= LOG_LOCAL0;
 		else if(syslog_facility=="local1") syslog_facility_code= LOG_LOCAL1;
@@ -725,9 +803,10 @@ int LMCLogger::InitSysLogger(){
 		else if(syslog_facility=="user") syslog_facility_code= LOG_USER;
 		else syslog_facility_code= LOG_LOCAL6;
 
-		DEBUG_STREAM<<"LMCLogger::InitSysLogger() - syslog_host="<<syslog_host<<", syslog_facility_code="<<syslog_facility_code<<endl;
-		log4cxx::AppenderPtr syslogAppender( new log4cxx::net::SyslogAppender(syslogLayout, syslog_host, syslog_facility_code));
-	
+		DEBUG_STREAM<<"LMCLogger::InitSysLogger() - syslog_host="<<syslog_host<<", syslog_facility_code="<<syslog_facility_code<<" device="<<dev_name<<endl;
+		log4cxx::AppenderPtr syslogAppender( new log4cxx::net::SyslogAppender(syslogLayout, syslog_host, syslog_facility_code) );
+		syslogAppender->setOption("SYSLOGHOST",syslog_host);
+
 		//Init logger
 		logger->addAppender(syslogAppender);
 	
@@ -743,6 +822,194 @@ int LMCLogger::InitSysLogger(){
 	return 0;
 
 }//close InitSysLogger()
+
+
+int LMCLogger::InitBoostSysLogger(){
+
+	//Set syslog level from default value property
+	*attr_syslog_level_read= CORBA::string_dup(default_syslog_level.c_str());
+
+	try {		
+		std::string dev_name= this->get_name();	
+		std::transform(dev_name.begin(), dev_name.end(),dev_name.begin(), ::tolower);	
+			
+		//Get hostname
+		char hostname[HOST_NAME_MAX];
+		gethostname(hostname, HOST_NAME_MAX);
+		std::string syslog_host(hostname); 
+
+		//Get syslog facility
+		boost::log::sinks::syslog::facility syslog_facility_code= boost::log::sinks::syslog::local6;
+		if(syslog_facility=="local0") syslog_facility_code= boost::log::sinks::syslog::local0;
+		else if(syslog_facility=="local1") syslog_facility_code= boost::log::sinks::syslog::local1;
+		else if(syslog_facility=="local2") syslog_facility_code= boost::log::sinks::syslog::local2;
+		else if(syslog_facility=="local3") syslog_facility_code= boost::log::sinks::syslog::local3;
+		else if(syslog_facility=="local4") syslog_facility_code= boost::log::sinks::syslog::local4;
+		else if(syslog_facility=="local5") syslog_facility_code= boost::log::sinks::syslog::local5;
+		else if(syslog_facility=="local6") syslog_facility_code= boost::log::sinks::syslog::local6;
+		else if(syslog_facility=="local7") syslog_facility_code= boost::log::sinks::syslog::local7;
+		else if(syslog_facility=="syslog") syslog_facility_code= boost::log::sinks::syslog::syslogd;
+		else if(syslog_facility=="user") syslog_facility_code= boost::log::sinks::syslog::user;
+		else syslog_facility_code= boost::log::sinks::syslog::local6;
+
+
+		/*
+		//== LIST OF SUPPORTED KEYWORDS ==
+		//facility - Specifies the facility code. If not specified, syslog::user will be used.
+		//use_impl - Specifies the backend implementation. Can be one of:
+		//native - Use the native syslog API, if available. If no native API is available, it is equivalent to udp_socket_based.
+		//udp_socket_based - Use the UDP socket-based implementation, conforming to RFC3164 protocol specification. This is the default.
+		//ip_version - Specifies IP protocol version to use, in case if socket-based implementation is used. Can be either v4 (the default one) or v6.
+		//ident - Process identification string. This parameter is only supported by native syslog implementation.
+		*/
+
+		// Create a syslog sink
+    boost::shared_ptr<sink_t> sink(
+    	new sink_t(
+      	keywords::use_impl = sinks::syslog::native,
+        keywords::facility = syslog_facility_code,
+				keywords::ident = dev_name
+			)
+		);
+	
+		/*
+		// Create a syslog remote sink
+    boost::shared_ptr<sink_t> sink(
+    	new sink_t(
+      	boost::log::keywords::use_impl = sinks::syslog::udp_socket_based,
+        boost::log::keywords::facility = boost::log::sinks::syslog::local6
+			)
+		);
+		*/
+
+
+		/*		
+		boost::shared_ptr< boost::log::core > core = boost::log::core::get();
+
+    // Create a syslog sink
+    boost::shared_ptr< boost::log::sinks::syslog_backend > sink(new boost::log::sinks::syslog_backend(
+        boost::log::keywords::use_impl = boost::log::sinks::syslog::native,
+        boost::log::keywords::facility = syslog_facility_code
+    ));
+
+		sink->set_local_address(syslog_host);
+		sink->set_target_address(syslog_host);
+
+		sink->locked_backend()->set_formatter(
+    	boost::log::expressions::format("native_syslog: %1%: %2%")
+      	% boost::log::expressions::attr< unsigned int >("RecordID")
+        % boost::log::expressions::smessage
+    );
+
+
+    // Set the straightforward level translator for the "Severity" attribute of type int
+    sink->locked_backend()->set_severity_mapper(boost::log::sinks::syslog::direct_severity_mapping< int >("Severity"));
+
+    // Wrap it into the frontend and register in the core.
+    // The backend requires synchronization in the frontend.
+    core->add_sink(boost::make_shared< sink_t >(backend));
+		*/
+	
+		
+		/*
+		sink->set_formatter(
+    	boost::log::expressions::format("[%1%] - %2%")
+      	% boost::log::expressions::attr<std::string>("DeviceName")
+        % boost::log::expressions::smessage
+    );
+		*/
+		
+
+		sink->set_formatter(
+    	boost::log::expressions::format("%1%")
+      	% boost::log::expressions::smessage
+    );
+		
+
+    // Set the straightforward level translator for the "Severity" attribute of type int
+    //sink->locked_backend()->set_severity_mapper(boost::log::sinks::syslog::direct_severity_mapping< int >("Severity"));
+		boost::log::sinks::syslog::custom_severity_mapping< boost_severity_level > mapping("Severity");
+		
+    mapping[boost_info] = boost::log::sinks::syslog::info;
+    mapping[boost_warn] = boost::log::sinks::syslog::warning;
+		mapping[boost_debug] = boost::log::sinks::syslog::debug;
+    mapping[boost_error] = boost::log::sinks::syslog::error;
+		mapping[boost_fatal] = boost::log::sinks::syslog::critical;
+		sink->locked_backend()->set_severity_mapper(mapping);
+
+		sink->locked_backend()->set_local_address(syslog_host);
+		sink->locked_backend()->set_target_address(syslog_host);
+		
+		//Set log threshold
+		boost_severity_level filter_level= GetBoostLevelFromString(*attr_syslog_level_read);
+		sink->set_filter(severity <= filter_level);
+
+    // Add the sink to the core
+    boost::log::core::get()->add_sink(sink);
+
+    // Add some attributes too
+		//boost::log::core::get()->add_common_attributes();
+    //boost::log::core::get()->add_global_attribute("RecordID", boost::log::attributes::counter< unsigned int >());
+		//boost::log::core::get()->add_global_attribute("DeviceName", boost::log::attributes::constant<std::string>(dev_name));
+
+		//Add common attributes
+		//LineID - logging records counter with value type unsigned int
+		//TimeStamp - local time generator with value type boost::posix_time::ptime
+		//ProcessID - current process identifier with value type attributes::current_process_id::value_type
+		//ThreadID - in multithreaded builds, current thread identifier with value type attributes::current_thread_id::value_type
+
+		/*
+    // Do some logging
+    //boost::log::sources::severity_logger<boost_severity_level> lg(boost::log::keywords::severity = boost_info);
+		boost::log::sources::severity_logger_mt<boost_severity_level> lg(boost::log::keywords::severity = boost_info);
+
+    BOOST_LOG_SEV(lg, boost_info) << "A syslog record with normal level";
+    BOOST_LOG_SEV(lg, boost_warn) << "A syslog record with warning level";
+    BOOST_LOG_SEV(lg, boost_error) << "A syslog record with error level";
+		BOOST_LOG_SEV(lg, boost_debug) << "A syslog record with debug level";
+		BOOST_LOG_SEV(lg, boost_fatal) << "A syslog record with fatal level";
+		*/
+
+	}//close try block
+  catch (std::exception& e) {
+  	ERROR_STREAM << "Failed to initialize sys logger (err=" << e.what() <<")!"<<endl;
+    return 1;
+  }
+
+	return 0;
+
+}//close InitBoostSysLogger()
+
+
+boost_severity_level LMCLogger::GetBoostLevelFromString(std::string sLevel){
+
+	 if (sLevel == "DEBUG"){
+  	return boost_debug;
+	}
+	else if (sLevel == "INFO"){
+		return boost_info;
+	}
+	else if (sLevel == "WARN"){
+		return boost_warn;
+	}
+	else if (sLevel == "ERROR"){
+		return boost_error;
+	}
+	else if (sLevel == "FATAL"){
+		return boost_fatal;
+	}
+	else if (sLevel == "OFF"){
+		return boost_off;
+	}
+	else {
+		WARN_STREAM<< "LMCLogger::GetBoostLevelFromString() - Invalid string level (" << sLevel << ") specified!"<<endl;
+		return boost_off;
+	}
+
+ 	return boost_off;
+
+}//close GetBoostLevelFromString()
+
 
 log4tango::Level::Value LMCLogger::GetLog4LevelFromString(std::string sLevel) {
  
@@ -765,7 +1032,7 @@ log4tango::Level::Value LMCLogger::GetLog4LevelFromString(std::string sLevel) {
 		return log4tango::Level::OFF;
 	}
 	else {
-		WARN_STREAM<< "LMCLogger::GetTangoLogLevelFromString() - Invalid string level (" << sLevel << ") specified!"<<endl;
+		WARN_STREAM<< "LMCLogger::GetLog4LevelFromString() - Invalid string level (" << sLevel << ") specified!"<<endl;
 		return log4tango::Level::OFF;
 	}
 

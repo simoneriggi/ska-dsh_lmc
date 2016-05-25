@@ -40,8 +40,6 @@
 
 #include <tango.h>
 
-#include <ScopedLogger.h>
-
 
 //== LOG4CXX HEADERS ==
 #include <log4cxx/logger.h>
@@ -52,6 +50,27 @@
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/net/syslogappender.h>
 #include <log4cxx/helpers/exception.h>
+
+//== BOOST HEADERS ==
+#define BOOST_LOG_DYN_LINK 1 // necessary when linking the boost_log library dynamically
+#include <boost/log/core/core.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/log/common.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/attributes.hpp>
+#include <boost/log/sinks/sink.hpp>
+#include <boost/log/sinks/sync_frontend.hpp>
+#include <boost/log/sinks/syslog_backend.hpp>
+#include <boost/log/trivial.hpp>
+namespace logging = boost::log;
+namespace src = boost::log::sources;
+namespace sinks = boost::log::sinks;
+namespace keywords = boost::log::keywords;
+//typedef boost::log::sinks::synchronous_sink< boost::log::sinks::syslog_backend > sink_t;
+typedef sinks::synchronous_sink< sinks::syslog_backend > sink_t;
+
+#include <ScopedLogger.h>
 
 
 /*----- PROTECTED REGION END -----*/	//	LMCLogger.h
@@ -76,6 +95,8 @@ class LMCLogger : public TANGO_BASE_CLASS
 /*----- PROTECTED REGION ID(LMCLogger::Data Members) ENABLED START -----*/
 
 //	Add your own data members
+	
+	
 
 /*----- PROTECTED REGION END -----*/	//	LMCLogger::Data Members
 
@@ -121,6 +142,11 @@ public:
 	string	default_syslog_level;
 	//	startup_enable_logfw:	Enable log forwarding
 	Tango::DevShort	startup_enable_logfw;
+	//	syslog_logger:	SysLog library to be used:
+	//  
+	//  1=LOG4CXX
+	//  2=BOOST
+	Tango::DevShort	syslog_logger;
 
 //	Attribute data members
 public:
@@ -300,10 +326,15 @@ public:
 /*----- PROTECTED REGION ID(LMCLogger::Additional Method prototypes) ENABLED START -----*/
 
 //	Additional Method prototypes
+	public:
+		enum SysLoggerLib {eLOG4CXX=1,eBOOST=2};
+	
 	protected:
 		virtual int InitSysLogger();
+		virtual int InitBoostSysLogger();
 		log4tango::Level::Value GetLog4LevelFromString(std::string);
-		//Tango::LogTarget GetAppenderType(log4tango::Appender*);
+		
+	 	boost_severity_level GetBoostLevelFromString(std::string);
 		int GetAppenderType(log4tango::Appender*);
 
 /*----- PROTECTED REGION END -----*/	//	LMCLogger::Additional Method prototypes
