@@ -9,6 +9,7 @@
     <deviceProperties name="configFile" description="XML configuration file">
       <type xsi:type="pogoDsl:StringType"/>
       <status abstract="false" inherited="true" concrete="true"/>
+      <DefaultPropValue>l</DefaultPropValue>
     </deviceProperties>
     <deviceProperties name="nagios_query_handler" description="Address of Nagios Query Handler in filesystem">
       <type xsi:type="pogoDsl:StringType"/>

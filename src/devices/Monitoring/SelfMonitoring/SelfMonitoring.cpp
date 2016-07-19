@@ -735,6 +735,23 @@ int SelfMonitoring::WaitForSocketReadEvent(int timeout) {
 }
 
 
+// //--------------------------------------------------------
+// /**
+//  *	Read attribute SystemLoad related method
+//  *	Description: 
+//  *
+//  *	Data type:	Tango::DevString
+//  *	Attr type:	Spectrum max = 10
+//  */
+// //--------------------------------------------------------
+// void SelfMonitoring::read_SystemLoad(Tango::Attribute &attr)
+// {
+// 	DEBUG_STREAM << "SelfMonitoring::read_SystemLoad(Tango::Attribute &attr) entering... " << endl;
+// 	//	Set the attribute value
+// 	attr.set_value(attr_SystemLoad_read, 10);
+// 	
+// }
+
 
 /*----- PROTECTED REGION END -----*/	//	SelfMonitoring::namespace_ending
 } //	namespace

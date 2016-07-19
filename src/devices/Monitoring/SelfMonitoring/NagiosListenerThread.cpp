@@ -112,17 +112,30 @@ void* NagiosListenerThread::run_undetached(void*) {
 	RcvOptions.rcv_identity= true;
   RcvOptions.rcvmore= false;
 
+	
 	std::string client_identity= "";
+	Utils_ns::ZMQUtils::ZMQSendOptions SndOptions;
+  SndOptions.send_empty= false;
+  SndOptions.send_topic= false;
+  SndOptions.topic= "";
+  SndOptions.send_identity= true;
+  SndOptions.sendmore= false;
+  SndOptions.identity= client_identity;
+	
 
 	//## Read loop
 	while(1) {
-		//Check if thread stop flag is set
+		//================================================
+		//==  Check if thread stop flag is set
+		//================================================
 		if(device->m_StopThreadFlag) {
       DEBUG_STREAM<<"NagiosListenerThread::run_undetached(): DEBUG: Stop thread signal received, ending thread!"<<endl;
 			break; 
     }
 
-		//Check if there are messages from main thread
+		//=====================================================
+		//==  Check if there are messages from main thread
+		//=====================================================
 		int poll_status = zmq_poll (items, 1, 100*ZMQ_POLL_MSEC);
     if (poll_status == -1) {//poll returns with error
 			sstream.str(std::string());
@@ -151,7 +164,9 @@ void* NagiosListenerThread::run_undetached(void*) {
 
 			client_identity= recvBuffer.identity;
 
-			//Write cmd to socket
+			//=========================================
+			//==   Write cmd to Unix Nagios socket
+			//=========================================
 			DEBUG_STREAM<<"NagiosListenerThread::run_undetached(): INFO: Sending list request to Nagios NERD..."<<endl;
 			ssize_t recvBytes= m_SocketClient->Write((recvBuffer.data).c_str(),recvBuffer.size);
 			if(recvBytes<0){
@@ -159,11 +174,20 @@ void* NagiosListenerThread::run_undetached(void*) {
 					ERROR_STREAM<<"NagiosListenerThread::run_undetached(): ERROR: Failed to write to socket, close and reopening socket..."<<endl;
 					m_SocketClient->Reset();
 				}
-				//continue;	
+					
+				//Send back reply to dispatcher
+				Utils_ns::ZMQUtils::SBuffer reply;
+				reply.data= "NACK";
+				reply.size= 4;
+				reply.identity= client_identity;	
+				SndOptions.identity= client_identity;
+				Utils_ns::ZMQUtils::send_message(m_ZmqSocket,reply,SndOptions);
 			}//close if check recv
-		}//close if
+		}//close if zmq poll
 	
-		//Read socket
+		//=========================================
+		//===      Read Unix Nagios socket
+		//=========================================
 		ssize_t nbytes= m_SocketClient->Read(buffer,bufsize,timeout);
 		if(nbytes<0){
 			ERROR_STREAM<<"NagiosListenerThread::run_undetached(): ERROR: Failed to read from socket..."<<endl;
@@ -175,7 +199,9 @@ void* NagiosListenerThread::run_undetached(void*) {
 		}
 		INFO_STREAM<<"NagiosListenerThread::run_undetached(): INFO: Received message (n="<<nbytes<<"): "<< buffer <<endl;
 		
-		//Process received message
+		//=========================================
+		//===    Process received message 
+		//=========================================
 		try{
 			m_eventBuffer.data= std::string(buffer,nbytes);
 		}
@@ -196,6 +222,7 @@ void* NagiosListenerThread::run_undetached(void*) {
 	      
 	INFO_STREAM << "NagiosListenerThread::run_undetached(): INFO: End listener thread..."<<endl;
 
+	//Close zmq socket
 	if(m_ZmqSocket) {
 		DEBUG_STREAM<<"NagiosListenerThread::run_undetached(): INFO: Closing zmq socket..."<<endl;
 		zmq_close (m_ZmqSocket);
@@ -213,6 +240,7 @@ int NagiosListenerThread::ProcessEvent(Utils_ns::ZMQUtils::SBuffer& sbuffer){
 	DEBUG_STREAM<<"NagiosListenerThread::ProcessEvent(): INFO: Processing event (n="<<sbuffer.size<<",id="<<sbuffer.identity<<"): "<<sbuffer.data<<endl;
 	boost::regex serviceCheckExpr("(.*?);(.*?) from ([0-9]+) -> ([0-9]+): (.*)$");
 	boost::regex hostCheckExpr("(.*?) from ([0-9]+) -> ([0-9]+): (.*)$");
+	boost::regex cmdErrorExpr("([0-9]+): (.*)$");
 	boost::match_results<std::string::const_iterator> results;
 
 	
@@ -315,14 +343,23 @@ int NagiosListenerThread::ProcessEvent(Utils_ns::ZMQUtils::SBuffer& sbuffer){
 		
 		DEBUG_STREAM<<"NagiosListenerThread::ProcessEvent(): INFO: Host="<<Host<<", State("<<hostOldState<<"-->"<<hostState<<"), CheckData="<<hostCheckData<<endl;
 		
+		
+	}//close else if Host check
+	else if(boost::regex_match(sbuffer.data, results, cmdErrorExpr)){
+		DEBUG_STREAM<<"NagiosListenerThread::ProcessEvent(): INFO: Error message received..."<<endl;
+		std::string parsedData= results[0].str();
+		int ErrorCode= atoi(results[1].str().c_str());
+		std::string ErrorMsg= results[2].str();
+		DEBUG_STREAM<<"NagiosListenerThread::ProcessEvent(): INFO: ErrorCode="<<ErrorCode<<", ErrorMsg("<<ErrorMsg<<endl;
+		
 		//Send back reply to dispatcher
 		Utils_ns::ZMQUtils::SBuffer reply;
-		reply.data= "subscribe hostchecks OK";
-		reply.size= 23;
+		reply.data= parsedData;
+		reply.size= parsedData.size();
 		reply.identity= sbuffer.identity;
 		Utils_ns::ZMQUtils::send_message(m_ZmqSocket,reply,SndOptions);
 
-	}//close else if Host check
+	}//close else if Error
 	else{
 		//Other data received, send them back to dispatcher
 		DEBUG_STREAM<<"NagiosListenerThread::ProcessEvent(): INFO: Send back data to dispatcher..."<<endl;

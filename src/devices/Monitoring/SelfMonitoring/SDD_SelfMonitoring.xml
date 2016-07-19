@@ -1,0 +1,28 @@
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+
+<DeviceConfiguration>
+	
+	<MonitoringPointsList>
+
+		<MonitoringPoint id = "1" name = "system_load" alias="system_load" mandatory = "TRUE/FALSE">
+			<Component> LMC </Component>
+			<ComponentId> 1 </ComponentId>
+			<Description> LMC Hardware System CPU Load </Description>
+			<DataType> STRING </DataType>
+			<DataFormat> SPECTRUM </DataFormat> <!-- SCALAR/SPECTRUM/IMAGE -->
+			<DimX> 4 </DimX>
+			<RWType> READ </RWType>	 
+			<Polled> 
+				<Period> 1000 </Period>
+			</Polled>
+			<Events>
+				<PushEvent> </PushEvent>	
+			</Events>
+		</MonitoringPoint>
+
+	</MonitoringPointsList>
+
+</DeviceConfiguration>
+
+
+	
