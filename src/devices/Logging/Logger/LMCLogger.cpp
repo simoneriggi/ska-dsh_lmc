@@ -807,8 +807,6 @@ int LMCLogger::InitSysLogger(){
 		return -1;
 	}
 	
-
-
 	if(!SysLoggerManager::Instance().GetLogger()){
 		ERROR_STREAM<<"LMCLogger::InitSysLogger() - Failed to create&init sys logger!"<<endl;	
 		return -1;
