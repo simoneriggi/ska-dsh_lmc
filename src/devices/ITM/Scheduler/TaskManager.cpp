@@ -159,11 +159,11 @@ int TaskManager::PopMonitorTask(Task& task) {
 	std::string task_name= task.name;
 	auto now = std::chrono::system_clock::now();
 	auto tdiff= std::chrono::duration<double,std::milli>(task_end-now);
-	DEBUG_STREAM<<"TaskManager::PopMonitorTask(): INFO: Task info: name="<<task_name<<", id="<<task_id<<", status="<<task_exec_status<<", tdiff(s)="<<tdiff.count()/1000.<<endl;
+	DEBUG_STREAM<<"TaskManager::PopMonitorTask(): INFO: Task info: name="<<task_name<<", id="<<task_id<<", status="<<task_exec_status<<", texp_diff(s)="<<tdiff.count()/1000.<<endl;
 	
 	//## If expiration time is reached, remove task from queue and return the popped task
 	if (tdiff.count()<=0) {
-		DEBUG_STREAM<<"TaskManager::PopMonitorTask(): INFO: Popping task: name="<<task_name<<", id="<<task_id<<", tdiff(s)="<<tdiff.count()/1000.<<endl;
+		DEBUG_STREAM<<"TaskManager::PopMonitorTask(): INFO: Popping task: name="<<task_name<<", id="<<task_id<<", texp_diff(s)="<<tdiff.count()/1000.<<endl;
 		m_monitorQueue.erase(it);
 		return 0;	
 	}

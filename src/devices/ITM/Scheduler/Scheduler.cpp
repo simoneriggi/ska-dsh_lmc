@@ -75,6 +75,15 @@ static const char *RcsId = "$Id:  $";
 //  GetNRunningTasks  |  get_nrunning_tasks
 //  PrintTasks        |  print_tasks
 //  ClearTasks        |  clear_tasks
+//  DevConfigure      |  Inherited (no method)
+//  RestoreDevConfig  |  Inherited (no method)
+//  RemoveAttr        |  Inherited (no method)
+//  RemoveAttrs       |  Inherited (no method)
+//  SubscribeAttr     |  Inherited (no method)
+//  UnsubscribeAttr   |  Inherited (no method)
+//  SubscribeAttrs    |  Inherited (no method)
+//  UnsubscribeAttrs  |  Inherited (no method)
+//  GetTaskInfo       |  get_task_info
 //================================================================
 
 //================================================================
@@ -261,6 +270,7 @@ void Scheduler::get_device_property()
 	dev_prop.push_back(Tango::DbDatum("max_cacheable_device_proxies"));
 	dev_prop.push_back(Tango::DbDatum("max_task_timeout"));
 	dev_prop.push_back(Tango::DbDatum("task_history_time_depth"));
+	dev_prop.push_back(Tango::DbDatum("configFile"));
 
 	//	is there at least one property to be read ?
 	if (dev_prop.size()>0)
@@ -340,6 +350,17 @@ void Scheduler::get_device_property()
 		}
 		//	And try to extract task_history_time_depth value from database
 		if (dev_prop[i].is_empty()==false)	dev_prop[i]  >>  task_history_time_depth;
+
+		//	Try to initialize configFile from class property
+		cl_prop = ds_class->get_class_property(dev_prop[++i].name);
+		if (cl_prop.is_empty()==false)	cl_prop  >>  configFile;
+		else {
+			//	Try to initialize configFile from default device value
+			def_prop = ds_class->get_default_device_property(dev_prop[i].name);
+			if (def_prop.is_empty()==false)	def_prop  >>  configFile;
+		}
+		//	And try to extract configFile value from database
+		if (dev_prop[i].is_empty()==false)	dev_prop[i]  >>  configFile;
 
 	}
 
@@ -1034,6 +1055,33 @@ void Scheduler::clear_tasks()
 }
 //--------------------------------------------------------
 /**
+ *	Command GetTaskInfo related method
+ *	Description: Return a readable string info for each task in the queue
+ *
+ *	@returns Info string for each task
+ */
+//--------------------------------------------------------
+Tango::DevVarStringArray *Scheduler::get_task_info()
+{
+	Tango::DevVarStringArray *argout;
+	DEBUG_STREAM << "Scheduler::GetTaskInfo()  - " << device_name << endl;
+	/*----- PROTECTED REGION ID(Scheduler::get_task_info) ENABLED START -----*/
+	
+	//	Add your own code
+	argout= new Tango::DevVarStringArray;
+
+	std::vector<std::string> taskInfo;
+	m_TaskManager->GetTaskInfo(taskInfo);
+	argout->length(taskInfo.size());
+	for(unsigned int i=0;i<taskInfo.size();i++){
+		(*argout)[i] = CORBA::string_dup(taskInfo[i].c_str());
+	}
+
+	/*----- PROTECTED REGION END -----*/	//	Scheduler::get_task_info
+	return argout;
+}
+//--------------------------------------------------------
+/**
  *	Method      : Scheduler::add_dynamic_commands()
  *	Description : Create the dynamic commands if any
  *                for specified device.
@@ -1052,6 +1100,11 @@ void Scheduler::add_dynamic_commands()
 
 //	Additional Methods
 void Scheduler::Init(){
+
+	//## Init attributes
+	*attr_finalResponse_read = const_cast<char*>("");
+	*attr_intermediateResponse_read = const_cast<char*>("");
+
 
   //## Create main zmq context
   //DEBUG_STREAM << "Scheduler::Init(): DEBUG: Init zmq context..."<< endl;
@@ -1117,7 +1170,7 @@ int Scheduler::Schedule(std::string cmd_id,std::string cmd_name,std::string t_st
 		ds_class= ds_impl->get_device_class();
 	}
 	catch(Tango::DevFailed& e){
-		WARN_STREAM<<"Scheduler::Schedule(): WARN: Failed to get DeviceImpl/DeviceClass instances"<<endl;
+		ERROR_STREAM<<"Scheduler::Schedule(): WARN: Failed to get DeviceImpl/DeviceClass instances"<<endl;
 		return -1;
 	}
 
@@ -1126,7 +1179,7 @@ int Scheduler::Schedule(std::string cmd_id,std::string cmd_name,std::string t_st
 	//==================================
 	//--> Check activation time and convert to timestamp	
 	if(t_start==""){
-		WARN_STREAM<<"Scheduler::Schedule(): WARN: Invalid activation timestamp arg (empty string given)"<<endl;
+		ERROR_STREAM<<"Scheduler::Schedule(): WARN: Invalid activation timestamp arg (empty string given)"<<endl;
 		return -1;
 	}
 	std::time_t epoch_start_local= Utils_ns::SysUtils::TimeStringToUTCEpoch(t_start);
@@ -1136,7 +1189,7 @@ int Scheduler::Schedule(std::string cmd_id,std::string cmd_name,std::string t_st
 	//--> Reject command if activation time passed
 	auto now = std::chrono::system_clock::now();
 	if(t_start_local<now){
-		WARN_STREAM<<"Scheduler::Schedule(): WARN: Invalid activation time (timestamp passed)!"<<endl;
+		ERROR_STREAM<<"Scheduler::Schedule(): WARN: Invalid activation time (timestamp passed)!"<<endl;
 		return -1;
 	}
 
@@ -1158,7 +1211,7 @@ int Scheduler::Schedule(std::string cmd_id,std::string cmd_name,std::string t_st
 	std::string device_name= "";
 
 	if(cmd_name=="" || cmd_id=="") {	
-		WARN_STREAM<<"Scheduler::Schedule(): WARN: Invalid command name/id args (empty string given)"<<endl;
+		ERROR_STREAM<<"Scheduler::Schedule(): WARN: Invalid command name/id args (empty string given)"<<endl;
 		return -1;
 	}
 
@@ -1183,7 +1236,7 @@ int Scheduler::Schedule(std::string cmd_id,std::string cmd_name,std::string t_st
 		device_name= cmd_device;
 
 		//Check is given device exists on the control system
-		WARN_STREAM<<"Scheduler::Schedule(): INFO: Checking if device "<<device_name<<" and command "<<cmd_name<<" actually exist..."<<endl;
+		DEBUG_STREAM<<"Scheduler::Schedule(): INFO: Checking if device "<<device_name<<" and command "<<cmd_name<<" actually exist..."<<endl;
 			
 		Tango::DeviceProxy* dev_proxy= 0;	
 		bool isValidDeviceAndCommand= true;
@@ -1196,7 +1249,7 @@ int Scheduler::Schedule(std::string cmd_id,std::string cmd_name,std::string t_st
 		
 			for(int i=0;i<e.errors.length();i++){
 				Tango::DevString reason= e.errors[i].reason;	
-				DEBUG_STREAM<<"Scheduler::Schedule(): WARN: Exception occurred (reason: "<<reason<<")"<<endl;
+				ERROR_STREAM<<"Scheduler::Schedule(): WARN: Exception occurred (reason: "<<reason<<")"<<endl;
 			
 				if( strcmp(reason,"API_DeviceNotDefined")==0 ||
 						strcmp(reason,"DB_DeviceNotDefined")==0
@@ -1209,7 +1262,7 @@ int Scheduler::Schedule(std::string cmd_id,std::string cmd_name,std::string t_st
 		}//close catch ConnectionFailed
 		catch(Tango::WrongNameSyntax& e){
 			Tango::Except::print_exception(e);
-			WARN_STREAM<<"Scheduler::Schedule(): WARN: Given device does not exist (invalid syntax)"<<endl;
+			ERROR_STREAM<<"Scheduler::Schedule(): WARN: Given device does not exist (invalid syntax)"<<endl;
 			isValidDeviceAndCommand= false;	
 		}//close catch WrongNameSyntax
 		catch(Tango::DevFailed& e){

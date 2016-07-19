@@ -285,6 +285,14 @@ public:
 	 */
 	virtual void clear_tasks();
 	virtual bool is_ClearTasks_allowed(const CORBA::Any &any);
+	/**
+	 *	Command GetTaskInfo related method
+	 *	Description: Return a readable string info for each task in the queue
+	 *
+	 *	@returns Info string for each task
+	 */
+	virtual Tango::DevVarStringArray *get_task_info();
+	virtual bool is_GetTaskInfo_allowed(const CORBA::Any &any);
 
 
 	//--------------------------------------------------------

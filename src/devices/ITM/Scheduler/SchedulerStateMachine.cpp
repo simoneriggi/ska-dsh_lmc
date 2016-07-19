@@ -275,6 +275,21 @@ bool Scheduler::is_ClearTasks_allowed(TANGO_UNUSED(const CORBA::Any &any))
 	return true;
 }
 
+//--------------------------------------------------------
+/**
+ *	Method      : Scheduler::is_GetTaskInfo_allowed()
+ *	Description : Execution allowed for GetTaskInfo attribute
+ */
+//--------------------------------------------------------
+bool Scheduler::is_GetTaskInfo_allowed(TANGO_UNUSED(const CORBA::Any &any))
+{
+	//	Not any excluded states for GetTaskInfo command.
+	/*----- PROTECTED REGION ID(Scheduler::GetTaskInfoStateAllowed) ENABLED START -----*/
+	
+	/*----- PROTECTED REGION END -----*/	//	Scheduler::GetTaskInfoStateAllowed
+	return true;
+}
+
 
 /*----- PROTECTED REGION ID(Scheduler::SchedulerStateAllowed.AdditionalMethods) ENABLED START -----*/
 

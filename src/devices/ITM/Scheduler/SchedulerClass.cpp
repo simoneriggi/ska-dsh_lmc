@@ -302,6 +302,23 @@ CORBA::Any *ClearTasksClass::execute(Tango::DeviceImpl *device, TANGO_UNUSED(con
 	return new CORBA::Any();
 }
 
+//--------------------------------------------------------
+/**
+ * method : 		GetTaskInfoClass::execute()
+ * description : 	method to trigger the execution of the command.
+ *
+ * @param	device	The device on which the command must be executed
+ * @param	in_any	The command input data
+ *
+ *	returns The command output data (packed in the Any object)
+ */
+//--------------------------------------------------------
+CORBA::Any *GetTaskInfoClass::execute(Tango::DeviceImpl *device, TANGO_UNUSED(const CORBA::Any &in_any))
+{
+	cout2 << "GetTaskInfoClass::execute(): arrived" << endl;
+	return insert((static_cast<Scheduler *>(device))->get_task_info());
+}
+
 
 //===================================================================
 //	Properties management
@@ -863,6 +880,23 @@ void SchedulerClass::command_factory()
 			Tango::OPERATOR);
 	pClearTasksCmd->set_polling_period(10000);
 	command_list.push_back(pClearTasksCmd);
+
+
+
+
+
+
+
+
+
+	//	Command GetTaskInfo
+	GetTaskInfoClass	*pGetTaskInfoCmd =
+		new GetTaskInfoClass("GetTaskInfo",
+			Tango::DEV_VOID, Tango::DEVVAR_STRINGARRAY,
+			"",
+			"Info string for each task",
+			Tango::OPERATOR);
+	command_list.push_back(pGetTaskInfoCmd);
 
 	/*----- PROTECTED REGION ID(SchedulerClass::command_factory_after) ENABLED START -----*/
 	

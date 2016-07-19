@@ -474,31 +474,25 @@ class TaskCollection {
 			pipe.set_data_elt_names(field_names);
 				
 			//Fill pipe
-			cout<<"pto 1"<<endl;
 			//Tango::DevicePipeBlob pipe_blob;
 			//std::vector<Tango::DevicePipeBlob> pipe_blobs;
 			try{					
 				for(int i=0;i<GetN();i++){
 					
-					cout<<"blob "<<i<<": pto 1"<<endl;
 					//int status= m_tasks[i].GetPipeBlob(pipe_blob);
 					auto pipe_blob= m_tasks[i].GetPipeBlobPtr();
-					cout<<"blob "<<i<<": pto 2"<<endl;
-			
+					
 					//if(status<0){
 					if(!pipe_blob){
 						throw std::runtime_error("Failed to get pipe blob from task");
 					}
 					//pipe_blobs.push_back(*pipe_blob);
-					cout<<"blob "<<i<<": pto 3"<<endl;
-			
+					
 					//pipe << pipe_blobs[i];
 					pipe << *pipe_blob;
-					cout<<"blob "<<i<<": pto 4"<<endl;
-			
+					
 				}//end loop tasks
-				cout<<"pto 2"<<endl;
-			
+				
 			}//close try
 			catch(...){
 				cerr<<"TaskCollection::GetPipeBlob(): ERROR: Exception occurred while filling task collection pipe!"<<endl;
@@ -644,6 +638,32 @@ class TaskManager : public Tango::LogAdapter {
 				INFO_STREAM<<"TaskManager::PrintTasks(): INFO: "<<thisTaskString<<endl;
 			}
 			return;
+		}
+
+		/** 
+		\brief Get task history info
+ 		*/
+		int GetTaskHistoryInfo(std::vector<std::string>& info){
+			std::lock_guard<std::mutex> lock(m_mutex);
+			Tasks& task_list= m_tasks.GetTasks();
+			for(unsigned int i=0;i<task_list.size();i++){
+				std::string thisTaskString= task_list[i].GetPrintableString();
+				info.push_back(thisTaskString);
+			}
+			return 0;
+		}
+
+		/** 
+		\brief Get task info
+ 		*/
+		int GetTaskInfo(std::vector<std::string>& info){
+			std::lock_guard<std::mutex> lock(m_mutex);
+			for(auto task_iter : m_taskQueue) {
+ 				std::string thisTaskString= task_iter.GetPrintableString();
+				info.push_back(thisTaskString);
+			}//end loop tasks in queue 
+
+			return 0;
 		}
 
 		/** 

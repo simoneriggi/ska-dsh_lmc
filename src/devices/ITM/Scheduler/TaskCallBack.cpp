@@ -116,7 +116,8 @@ void TaskCallBack::cmd_ended(Tango::CmdDoneEvent* event){
 
 	
 	//Parse argout data to Response
-	if(m_TaskResponse->Parse(cmd_argout)<0){
+	//if(m_TaskResponse->Parse(cmd_argout)<0){
+	if(MessageParser_ns::MessageUtils::ParseResponse(*m_TaskResponse,cmd_argout)<0){
 		ERROR_STREAM<<"TaskCallBack::cmd_ended(): ERROR: Failed to parse argout data to Response (malformed response?)!"<<endl;
 		return;
 	}
