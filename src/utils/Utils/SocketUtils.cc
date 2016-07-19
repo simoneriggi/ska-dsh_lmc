@@ -54,11 +54,13 @@ int SocketClient::Reset(){
 
 int SocketClient::Init(){
 
+	/*
 	//## Check is socket is already open
 	if(m_sockfd>0){
 		cout << "SocketClient::Init(): INFO: Socket already init and connected..." << endl;
  		return 0;
 	}
+	*/
 
 	//## Define socket vars
   struct timeval timeout;

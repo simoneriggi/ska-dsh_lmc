@@ -116,13 +116,33 @@ class SysUtils {
 			return std::chrono::system_clock::from_time_t(epoch_local);
 		}
 
+		static double GetOffsetToUTC(){
+			time_t currtime;
+ 		 	struct tm* timeinfo;
+  		time ( &currtime );
+  		timeinfo = gmtime ( &currtime );
+  		time_t utc = mktime( timeinfo );
+  		timeinfo = localtime ( &currtime );
+  		time_t local = mktime( timeinfo );
+
+  		// Get offset in hours from UTC
+  		double offsetFromUTC = difftime(utc, local) / 3600.;
+
+  		// Adjust for DST
+			if (timeinfo->tm_isdst){
+    		offsetFromUTC -= 1;
+  		}
+			return offsetFromUTC;
+		}//close GetOffsetToUTC()
+
 		static std::time_t TimeStringToUTCEpoch(std::string& stime) {
 			int year, month, day;
 			int hour, minute, second;
 			int zone, zone_fract;
 			sscanf(stime.c_str(), "%4u-%2u-%2uT%2u:%2u:%2u%3u:%2u", &year, &month, &day, &hour, &minute, &second, &zone, &zone_fract);
 
-			long long int utc_offset= zone*3600 + zone_fract*60;
+			long long int utc_offset= zone*3600 + zone_fract*60;	
+			cout<<"TimeStringToUTCEpoch(): utc_offset="<<utc_offset<<endl;
 
 			//Create a tm struct
 			std::tm time_struct;

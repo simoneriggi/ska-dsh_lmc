@@ -34,6 +34,18 @@ CodeUtils::~CodeUtils(){
 }
 
 
+
+template<>
+bool CodeUtils::getValueFromString(std::string& input){
+	bool value;
+	std::stringstream sstream;
+	sstream.str(input);
+	sstream>>std::boolalpha>>value;
+	return value;
+}
+
+
+
 }//close namespace
 
 

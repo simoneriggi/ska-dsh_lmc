@@ -213,9 +213,26 @@ class CodeUtils {
   			return result;
 			}
 
+		/**
+		* \brief Extract a scalar value from string
+		*/
+		//template<typename T>
+		//	static T getValueFromString(std::string& input);
+
+		template<typename T>
+			static T getValueFromString(std::string& input){
+				T value;
+				std::stringstream sstream;
+				sstream.str(input);
+				sstream>>value;
+				return value;
+			}
+
 	private:
 
 };
+
+
 
 }//close namespace
 
