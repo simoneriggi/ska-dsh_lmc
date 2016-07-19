@@ -39,8 +39,7 @@ Request::Request() {
 }   
 
 Request::~Request(){
-	cout<<"~Request(): Calling destructor..."<<endl;
-	
+	//cout<<"~Request(): Calling destructor..."<<endl;
 }
 
 bool Request::Validate(){
@@ -56,29 +55,33 @@ bool Request::Validate(){
 
 }//close Validate()
 
-int Request::Parse(std::string& msg){
+bool Request::Validate(bool checkSchedulable){
 
-	//First parse input string msg into Json object
-	Json::Value root;//root of json
-	Json::Reader reader;
-	try {
-		reader.parse(msg,root);
+	if(!Validate()) return false;
+
+	//Check if this is a scheduled & schedulable request
+	if( IsScheduled() && !IsSchedulable() ) {
+		cerr<<"Request::Validate(): WARN: Schedulable task cannot be scheduled (activation time in the past?)"<<endl;
+		return false;
 	}
-	catch(...){
-		cerr<<"Request::Parse(): ERROR: Failed to parse input string!"<<endl;
-		return -1;
-	}
+
+	return true;
+
+}//close Validate()
+
+
+int Request::ParseFromJsonObj(Json::Value& root){
 
 	//Set class fields from json object
 	if(root.isNull()) {
-		cerr<<"Request::Parse(): ERROR: Null json tree!"<<endl;
+		cerr<<"Request::ParseFromJsonObj(): ERROR: Null json tree!"<<endl;
 		return -1;
 	}
 
 	if(root.isMember("id")){
 		std::string id= root["id"].asString();
 		if(id=="") {
-			cerr<<"Request::Parse(): ERROR: Empty id field!"<<endl;
+			cerr<<"Request::ParseFromJsonObj(): ERROR: Empty id field!"<<endl;
 			return -1;
 		}
 		SetId(id);
@@ -86,7 +89,7 @@ int Request::Parse(std::string& msg){
 	if(root.isMember("source_id")){
 		std::string source_id= root["source_id"].asString();
 		if(source_id=="") {
-			cerr<<"Request::Parse(): ERROR: Empty source_id field!"<<endl;
+			cerr<<"Request::ParseFromJsonObj(): ERROR: Empty source_id field!"<<endl;
 			return -1;
 		}
 		SetSourceId(source_id);
@@ -94,7 +97,7 @@ int Request::Parse(std::string& msg){
 	if(root.isMember("type")){
 		std::string type= root["type"].asString();
 		if(type=="") {
-			cerr<<"Request::Parse(): ERROR: Empty type field!"<<endl;
+			cerr<<"Request::ParseFromJsonObj(): ERROR: Empty type field!"<<endl;
 			return -1;
 		}
 		SetType(type);
@@ -102,7 +105,7 @@ int Request::Parse(std::string& msg){
 	if(root.isMember("retry_number")){
 		short retry_number= static_cast<short>(root["retry_number"].asInt());
 		if(retry_number<0) {
-			cerr<<"Request::Parse(): ERROR: Invalid retry_number field (value="<<retry_number<<")"<<endl;
+			cerr<<"Request::ParseFromJsonObj(): ERROR: Invalid retry_number field (value="<<retry_number<<")"<<endl;
 			return -1;
 		}
 		SetRetryNumber(retry_number);
@@ -110,7 +113,7 @@ int Request::Parse(std::string& msg){
 	if(root.isMember("subarray_id")){
 		short subarray_id= static_cast<short>(root["subarray_id"].asInt());
 		if(subarray_id<0) {
-			cerr<<"Request::Parse(): ERROR: Invalid subarray_id field (value="<<subarray_id<<")"<<endl;
+			cerr<<"Request::ParseFromJsonObj(): ERROR: Invalid subarray_id field (value="<<subarray_id<<")"<<endl;
 			return -1;
 		}
 		SetSubArrayId(subarray_id);
@@ -123,7 +126,7 @@ int Request::Parse(std::string& msg){
 	if(hasActivationTime){
 		std::string t_start= root["activation_time"].asString();
 		if(t_start==""){
-			cerr<<"Request::Parse(): ERROR: Empty activation time field!"<<endl;
+			cerr<<"Request::ParseFromJsonObj(): ERROR: Empty activation time field!"<<endl;
 			return -1;
 		}
 
@@ -131,31 +134,16 @@ int Request::Parse(std::string& msg){
 		if(hasExpirationTime) {
 			t_end= root["expiration_time"].asString();
 			if(t_end==""){
-				cerr<<"Request::Parse(): ERROR: Empty expiration time field!"<<endl;
+				cerr<<"Request::ParseFromJsonObj(): ERROR: Empty expiration time field!"<<endl;
 				return -1;
 			}
 
 			//Check time range
 			std::time_t epoch_start= Utils_ns::SysUtils::TimeStringToLocalEpoch(t_start);
 			std::time_t epoch_end= Utils_ns::SysUtils::TimeStringToLocalEpoch(t_end);
-			/*
-			std::tm tm_start;
-			std::tm tm_end;
-			
-			strptime(t_start.c_str(), "%Y-%m-%dT%T%z", &tm_start);
-			tm_start.tm_isdst = -1;
-			std::time_t epoch_start= std::mktime(&tm_start);
-			std::time_t epochFromUTC_start = timegm(tm_start);//Assume tm is expressed in UTC (neglects any timezone setting)
-
-			strptime(t_end.c_str(), "%Y-%m-%dT%T%z", &tm_end);
-			tm_end.tm_isdst = -1;
-			std::time_t epoch_end= std::mktime(&tm_end);
-			std::time_t epochFromUTC_end = timegm(tm_end);//Assume tm is expressed in UTC (neglects any timezone setting)
-			*/
-
-
+		
 			if(epoch_start>=epoch_end) {
-				cerr<<"Request::Parse(): ERROR: Invalid time range requested (t_start is after t_end)!"<<endl;
+				cerr<<"Request::ParseFromJsonObj(): ERROR: Invalid time range requested (t_start is after t_end)!"<<endl;
 				return -1;
 			}
 			SetExpirationTime(t_end);
@@ -165,13 +153,15 @@ int Request::Parse(std::string& msg){
 	}//close if
 	
 
+	cout<<"Request::ParseFromJsonObj(): INFO: hasArgs? "<<root.isMember("arguments")<<endl;
 	if(root.isMember("arguments")){
 		Json::Value attr_root= root["arguments"];
+		cout<<"--> nargs="<<attr_root.size()<<" attr_root.isArray()="<<attr_root.isArray()<<endl;
 		if(attr_root.isArray()){
 			for(unsigned int i=0;i<attr_root.size();i++){
 				int status= AddArgumentFromJson(attr_root[i]);
 				if(status<0) {
-					cerr<<"Request::Parse(): ERROR: Failed to parse argument no. "<<i+1<<endl;
+					cerr<<"Request::ParseFromJsonObj(): ERROR: Failed to parse argument no. "<<i+1<<endl;
 					return -1;
 				}
 			}
@@ -180,11 +170,50 @@ int Request::Parse(std::string& msg){
 
 	//Validate to ensure that all fields are correctly set
 	if(!Validate()) {
-		cerr<<"Request::Parse(): ERROR: Validation failed!"<<endl;
+		cerr<<"Request::ParseFromJsonObj(): ERROR: Validation failed!"<<endl;
 		return -1;
 	}
 
 	return 0;
+
+}//close ParseFromJsonObj()
+
+int Request::Parse(std::string& msg){
+
+	//First parse input string msg into Json object
+	Json::Value root;//root of json
+	Json::Reader reader;
+	try {
+		reader.parse(msg,root);
+	}
+	catch(...){
+		cerr<<"Request::Parse(): ERROR: Failed to parse input string!"<<endl;
+		return -1;
+	}
+	
+	//Parse from Json obj
+	return ParseFromJsonObj(root);
+
+}//close Parse()
+
+
+
+int Request::Parse(char* msg){
+
+	//First parse input string msg into Json object
+	Json::Value root;//root of json
+	Json::Reader reader;
+	size_t n= strlen(msg);
+	try {
+		reader.parse(msg,msg+n-1,root);
+	}
+	catch(...){
+		cerr<<"Request::Parse(): ERROR: Failed to parse input string!"<<endl;
+		return -1;
+	}
+
+	//Parse from Json obj
+	return ParseFromJsonObj(root);
 
 }//close Parse()
 
@@ -218,6 +247,47 @@ int Request::GetJson(Json::Value& root){
 }//close GetJson()
 
 
+bool Request::IsSchedulable(){
+
+	//Check if this is a scheduled task
+	if(!IsScheduled()) return false;
+
+	//Check activation time
+	std::string t_start= m_activation_time;	
+	auto now = std::chrono::system_clock::now();
+	auto t_start_local= Utils_ns::SysUtils::TimeStringToUTCChronoTimeStamp(t_start);
+
+	if(t_start_local<now){
+		cerr<<"Request::IsSchedulable(): WARN: Activation time is in the past!"<<endl;
+		return false;
+	}
+
+	//Check expiration time 
+	std::string t_end= "";
+	if( HasField("expiration_time") ) {
+		t_end= m_expiration_time;
+		auto t_end_local= Utils_ns::SysUtils::TimeStringToUTCChronoTimeStamp(t_end);
+		if(t_end_local<t_start_local) {
+			cerr<<"Request::IsSchedulable(): WARN: Expiration time is before activation!"<<endl;
+			return false;	
+		}
+	}//close if
+	
+	return true;
+
+}//close IsSchedulable()
+
+bool Request::IsScheduled(){
+		
+	//Check request args
+	if( !HasField("activation_time") ){
+		return false;
+	}
+
+	return true;
+
+}//close IsScheduled()
+
 
 //#############################
 //##    RESPONSE CLASS  
@@ -231,7 +301,7 @@ Response::Response() {
 
 Response::~Response(){
 	
-	cout<<"~Response(): Calling destructor..."<<endl;
+	//cout<<"~Response(): Calling destructor..."<<endl;
 			
 }
 
@@ -262,21 +332,7 @@ bool Response::Validate(){
 }//close validate()
 
 
-int Response::Parse(std::string& msg){
-
-	
-	//First parse input string msg into Json object
-	Json::Value root;//root of json
-	Json::Reader reader;
-	try {
-		reader.parse(msg,root);
-	}
-	catch(...){
-		cerr<<"Response::Parse(): ERROR: Failed to parse input string!"<<endl;
-		return -1;
-	}
-	
-	cout<<"Response::Parse(): INFO: msg="<<msg<<endl;
+int Response::ParseFromJsonObj(Json::Value& root){
 
 	//Set class fields from json object
 	if(root.isNull()) {
@@ -347,7 +403,118 @@ int Response::Parse(std::string& msg){
 
 	return 0;
 
+}//close ParseFromJsonObj()
+
+
+int Response::Parse(std::string& msg){
+
+	
+	//First parse input string msg into Json object
+	Json::Value root;//root of json
+	Json::Reader reader;
+	try {
+		reader.parse(msg,root);
+	}
+	catch(...){
+		cerr<<"Response::Parse(): ERROR: Failed to parse input string!"<<endl;
+		return -1;
+	}
+	
+	return ParseFromJsonObj(root);
+
+
+	/*
+	//Set class fields from json object
+	if(root.isNull()) {
+		cerr<<"Response::Parse(): ERROR: Null json tree!"<<endl;
+		return -1;
+	}
+
+	if(root.isMember("id")){
+		std::string id= root["id"].asString();
+		if(id=="") {
+			cerr<<"Response::Parse(): ERROR: Empty id field!"<<endl;
+			return -1;
+		}
+		SetId(id);
+	}
+	if(root.isMember("lmc_id")){
+		std::string lmc_id= root["lmc_id"].asString();
+		if(lmc_id=="") {
+			cerr<<"Response::Parse(): ERROR: Empty lmc_id field!"<<endl;
+			return -1;
+		}
+		SetLMCId(lmc_id);
+	}	
+
+	if(root.isMember("type")){
+		int type_code= root["type"].asInt();
+		switch(type_code){
+			case ACK_RESPONSE:
+				SetType(ACK_RESPONSE);
+				break;
+			case INTERMEDIATE_RESPONSE:
+				SetType(INTERMEDIATE_RESPONSE);
+				break;
+			case FINAL_RESPONSE:
+				SetType(FINAL_RESPONSE);
+				break;
+			default:
+			{
+				cerr<<"Response::Parse(): ERROR: Invalid response type given (value="<<type_code<<")!"<<endl;
+				return -1;
+				break;
+			}
+		}//close switch	
+	}//close if
+	
+	if(root.isMember("return_code")){
+		SetReturnCode( static_cast<short>(root["return_code"].asInt()) );
+	}
+	
+	if(root.isMember("response_msg")){
+		SetResponseMessage( root["response_msg"].asString() );
+	}
+
+	if(root.isMember("arguments")){
+		Json::Value attr_root= root["arguments"];
+		if(attr_root.isArray()){
+			for(unsigned int i=0;i<attr_root.size();i++){
+				AddArgumentFromJson(attr_root[i]);
+			}
+		}
+	}//close if
+
+	//Validate to ensure that all fields are correctly set
+	if(!Validate()) {
+		cerr<<"Response::Parse(): ERROR: Validation failed!"<<endl;
+		return -1;
+	}
+
+	return 0;
+	*/
+
 }//close Parse()
+
+int Response::Parse(char* msg){
+
+	//First parse input string msg into Json object
+	Json::Value root;//root of json
+	Json::Reader reader;
+	size_t n= strlen(msg);
+	
+	try {
+		reader.parse(msg,msg+n-1,root);
+	}
+	catch(...){
+		cerr<<"Response::Parse(): ERROR: Failed to parse input string!"<<endl;
+		return -1;
+	}
+	
+	return ParseFromJsonObj(root);
+
+}//close Parse()
+
 
 int Response::GetJson(Json::Value& root){
 
@@ -376,7 +543,6 @@ int Response::GetJson(Json::Value& root){
 }//close GetJson()
 
 
-//int Response::GetPipe(Tango::Pipe& pipe){
 int Response::GetPipeBlob(Tango::DevicePipeBlob& blob){
 
 	bool hasArgs= HasArguments();
@@ -396,11 +562,14 @@ int Response::GetPipeBlob(Tango::DevicePipeBlob& blob){
 
 		
 		if(hasArgs){
+			cout<<"Response::GetPipeBlob(): INFO: Getting arg pipe blob..."<<endl;
 			auto args_blob= GetArgumentPipeBlobPtr();
-			if(args_blob){
+			if(!args_blob){
 				throw std::runtime_error("Failed to get arguments pipe blob");
 			}
+			cout<<"Response::GetPipeBlob(): INFO: Filling arg pipe blob..."<<endl;
 			blob["Arguments"] << *args_blob;
+			cout<<"Response::GetPipeBlob(): INFO: done!"<<endl;
 		}
 		
 
@@ -434,6 +603,31 @@ MessageUtils::~MessageUtils(){
 
 }
 
+int MessageUtils::ParseRequest(Request& reqObj,std::string& req){
+
+	return reqObj.Parse(req);
+	
+}//close ParseRequest()
+		
+int MessageUtils::ParseRequest(Request& reqObj,char* req){
+
+	return reqObj.Parse(req);
+	
+}//close ParseRequest()
+
+
+int MessageUtils::ParseResponse(Response& resObj,std::string& res){
+
+	return resObj.Parse(res);
+	
+}//close ParseResponse()
+		
+int MessageUtils::ParseResponse(Response& resObj,char* res){
+
+	return resObj.Parse(res);
+	
+}//close ParseResponse()
+
 int MessageUtils::MakeSuccessResponse(Response& res,Request& req,std::string lmc_id,std::string msg){
 
 	//Check request
@@ -458,6 +652,7 @@ int MessageUtils::MakeSuccessResponse(Response& res,Request& req,std::string lmc
 	}
 
 	return 0;
+
 }//close MakeSuccessResponse()
 
 int MessageUtils::MakeSuccessResponse(std::string& jsonString,Request& req,std::string lmc_id,std::string msg){

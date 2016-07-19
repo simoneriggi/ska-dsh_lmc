@@ -53,7 +53,7 @@ class Message {
 			m_argMap.clear();
 		};
 		virtual ~Message(){
-			cout<<"~Message(): Calling destructor..."<<endl;
+			//cout<<"~Message(): Calling destructor..."<<endl;
 			ClearArgs();
 		};
 
@@ -134,9 +134,46 @@ class Message {
 
 
 		/** 
+		\brief Find arguments by names
+ 		*/
+		 int FindArguments(std::vector<Argument*>& found_args,std::vector<std::string> names){
+			if(m_args.empty()) {
+				cerr<<"Message::FindArguments(): WARN: No arguments present!"<<endl;
+				return -1;
+			}
+
+			found_args.clear();
+			bool hasArgs= true;
+			for(unsigned int k=0;k<names.size();k++){
+				std::vector<Argument*>::iterator it = std::find_if(m_args.begin(), m_args.end(), MatchArg(names[k]));
+				if (it==m_args.end()) {	//not found in collection
+					cerr<<"Message::FindArguments(): WARN: Argument "<<names[k]<<" not found!"<<endl;
+					hasArgs= false;
+					break;
+				}
+				size_t pos = it-m_args.begin();
+				int index= pos;
+				found_args.push_back( GetArgument(index) );
+			}//end loop args
+
+			if(!hasArgs) return -1;
+
+			return 0;
+		}//close FindArguments()
+
+
+		/** 
 		\brief Parse from string
  		*/
 		virtual int Parse(std::string& msg){return 0;}
+		/** 
+		\brief Parse from char*
+ 		*/
+		virtual int Parse(char* msg){return 0;}
+		/** 
+		\brief Parse from json obj
+ 		*/
+		virtual int ParseFromJsonObj(Json::Value&){return 0;}
 
 		/** 
 		\brief Get json object from class fields
@@ -241,9 +278,17 @@ class Message {
 					cerr<<"Message::GetArgument(): INFO: Argument "<<name<<" not found!"<<endl;
 					return 0;
 				}
-				//std::shared_ptr<Option<T>> thisCastedArgument= std::dynamic_pointer_cast<ArgumentImpl<T>>(thisArgument);
-				ArgumentImpl<T>* thisCastedArgument= dynamic_cast<ArgumentImpl<T>*>(thisArgument);
-			
+				//std::shared_ptr<Argument<T>> thisCastedArgument= std::dynamic_pointer_cast<ArgumentImpl<T>>(thisArgument);
+				//ArgumentImpl<T>* thisCastedArgument= dynamic_cast<ArgumentImpl<T>*>(thisArgument);
+				ArgumentImpl<T>* thisCastedArgument= 0;
+				try {
+					thisCastedArgument= dynamic_cast<ArgumentImpl<T>*>(thisArgument);
+				}
+				catch(std::bad_cast& e){
+					cerr<<"Message::GetArgument(): ERROR: Failed to get argument value (invalid type cast)!"<<endl;
+					return 0;
+				}
+		
 				if(!thisCastedArgument){
 					cerr<<"Message::GetArgument(): ERROR: Failed to cast argument to given data type!"<<endl;
 					return 0;
@@ -263,17 +308,81 @@ class Message {
 			}//close GetArgumentValue()		
 
 		/** 
+		\brief Get arguments value
+ 		*/
+		int GetArgumentValues(){return 0;}
+
+		template<typename T, typename ... Tn>
+		int GetArgumentValues(const std::string& name, T& value, Tn&... values){
+    	ArgumentImpl<T>* thisArgument= GetArgument<T>(name);
+			if(!thisArgument) return -1;
+			value= thisArgument->value;
+
+			std::cout << "GetArgumentValue(): name=" << name << ", val=" << value << std::endl;	
+    	GetArgumentValues(values...);
+			return 0;
+		}
+
+		/*
+		template <typename T>
+		int GetArgumentValue(T& p){
+			ArgumentImpl<T>* thisArgument= GetArgument<T>(p.first);
+			if(!thisArgument) return -1;
+			p.second= thisArgument->value;
+			return 0;
+		}
+
+		template<typename ... Tn>
+		int GetArgumentValues(Tn&... values){
+			size_t nArgVars= sizeof...(Tn);
+    	int retCodes[] = { 0, (GetArgumentValue(values), void(), 0)...};
+    	bool hasFailed= false;
+			for(unsigned int k=0;k<nArgVars;k++){
+				if(retCodes[k]<0){
+					hasFailed= true;
+					break;
+				}
+			}
+			if(hasFailed) return -1;
+			return 0;
+		}
+		*/
+
+
+
+		/*
+		template<typename ... Tn>
+			int GetArgumentValues(const std::vector<std::string> arg_names, Tn&... values){
+				size_t nArgs= m_args.size();
+				size_t nArgNames= arg_names.size();
+				size_t nArgVars= sizeof...(Tn);
+				if(nArgVars!=nArgNames) return -1;
+				if(nArgVars<=0 || nArgNames<=0) return -1;
+				if(nArgNames>nArgs) return -1;
+				int retCodes[] = { GetArgumentValue(values)...};
+				bool hasFailed= false;
+				for(unsigned int k=0;k<nArgNames;k++){
+					if(retCodes[k]<0){
+						hasFailed= true;
+						break;
+					}
+				}
+				if(hasFailed) return -1;
+				return 0;
+			}
+		*/
+		/** 
 		\brief Get argument pipe blob
  		*/
 		std::shared_ptr<Tango::DevicePipeBlob> GetArgumentPipeBlobPtr(){
 
-			
 			std::shared_ptr<Tango::DevicePipeBlob> blob= 0;	
 			try{				
 
 				//Init blob
-				blob= std::make_shared<Tango::DevicePipeBlob>("arguments");
-				blob->set_name("arguments");
+				cout<<"GetArgumentPipeBlobPtr(): INFO: Init blob..."<<endl;
+				blob= std::make_shared<Tango::DevicePipeBlob>("Arguments");
+				blob->set_name("Arguments");
 				std::vector<std::string> field_names;
 				for(unsigned int i=0;i<m_args.size();i++){
 					std::string arg_name= m_args[i]->GetName();
@@ -281,8 +390,9 @@ class Message {
 				}		
 				blob->set_data_elt_names(field_names);
 	
-				//Fill pipe
-				blob->set_data_elt_nb(m_args.size());
+				//Fill pipe blob
+				cout<<"GetArgumentPipeBlobPtr(): INFO: Filling blob with "<<m_args.size()<<" args ..."<<endl;
+				//blob->set_data_elt_nb(m_args.size());
 				for(unsigned int i=0;i<m_args.size();i++){		
 					std::string arg_name= m_args[i]->GetName();	
 					auto arg_blob= m_args[i]->GetPipeBlobPtr();				
@@ -294,7 +404,11 @@ class Message {
 			}//close try
 			catch(Tango::DevFailed& e){
 				Tango::Except::print_exception(e);
-				cerr<<"Message::GetArgumentPipeBlobPtr(): ERROR: Exception occurred while creating and filling task pipe!"<<endl;
+				cerr<<"Message::GetArgumentPipeBlobPtr(): ERROR: Exception occurred while creating and filling arg collection pipe!"<<endl;
+				return 0;
+			}	
+			catch(std::exception &e){
+				cerr << "Message::GetArgumentPipeBlobPtr(): ERROR: Run time exception occurred (e="<<e.what()<<") while creating and filling arg collection pipe!"<<endl;	
 				return 0;
 			}
 			catch(...){
@@ -348,10 +462,10 @@ class Message {
 
 	private:
 		void ClearArgs(){
-			cout<<"Message::ClearArgs(): Clearing args (n="<<m_args.size()<<")"<<endl;
+			//cout<<"Message::ClearArgs(): Clearing args (n="<<m_args.size()<<")"<<endl;
 			for(unsigned int i=0;i<m_args.size();i++){
 				if(m_args[i]){
-					cout<<"Message::ClearArgs(): Clearing arg no "<<i+1<<" ..."<<endl;		
+					//cout<<"Message::ClearArgs(): Clearing arg no "<<i+1<<" ..."<<endl;		
 					delete m_args[i];
 					m_args[i]= 0;
 				}
@@ -389,6 +503,9 @@ class Response : public Message {
 		int GetJson(Json::Value&);
 		bool Validate();
 		int Parse(std::string& msg);
+		int Parse(char* msg);
+		int ParseFromJsonObj(Json::Value&);
+
 
 		/** 
 		\brief Set response type field
@@ -474,8 +591,10 @@ class Request : public Message {
 	public:
 		int GetJson(Json::Value&);
 		bool Validate();
+		bool Validate(bool checkSchedulable);
 		int Parse(std::string& msg);
-
+		int Parse(char* msg);
+		int ParseFromJsonObj(Json::Value&);
 		
 		/** 
 		\brief Set type field
@@ -548,6 +667,12 @@ class Request : public Message {
 		\brief Get subarray id field
  		*/
 		short GetRetryNumber(){return m_retry_number;}
+		/** 
+		\brief Get subarray id field
+ 		*/
+		//bool IsScheduled(bool checkSchedulable=true);
+		bool IsScheduled();
+		bool IsSchedulable();
 
 	
 	protected:
@@ -567,6 +692,11 @@ class MessageUtils {
 		~MessageUtils();
 
 	public:
+		static int ParseRequest(Request& reqObj,std::string& req);
+		static int ParseRequest(Request& reqObj,char* req);
+		static int ParseResponse(Response& reqObj,std::string& res);
+		static int ParseResponse(Response& reqObj,char* res);
+
 		static int MakeEchoResponse(Response& res,Request& req,std::string lmc_id,std::string msg);
 		static int MakeEchoResponse(std::string& res,Request& req,std::string lmc_id,std::string msg);
 		static int MakeErrorResponse(Response& res,Request& req,std::string lmc_id,std::string msg);

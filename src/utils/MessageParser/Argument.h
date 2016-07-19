@@ -35,6 +35,8 @@ class Argument {
 	public:
 		virtual std::string GetName() const = 0;
 		virtual std::string GetType() const = 0;
+		template <typename T>
+    	int GetValue(T& t);
 		
 		virtual void SetTypeCode() = 0;
 		virtual void SetValueFromStream(std::stringstream& sstream) = 0;
@@ -178,10 +180,15 @@ class ArgumentImpl : public Argument {
 		typedef T ArgumentType;
 
 	public:
-
+		/** 
+		\brief Get name
+ 		*/
 		std::string GetName() const {return name;}
+		/** 
+		\brief Get type
+ 		*/
 		std::string GetType() const {return type;}
-
+		
 
 		Argument* Clone() const { 
 			return new ArgumentImpl<T>(*this); 
@@ -190,14 +197,14 @@ class ArgumentImpl : public Argument {
 
 		void SetTypeCode() {
 			cout<<"SetTypeCode()"<<endl;
-			if( std::is_same<T, bool>::value ) type= "DevBoolean";
-			else if( std::is_same<T, float>::value ) type= "DevFloat";
-			else if( std::is_same<T, double>::value ) type= "DevDouble";
-			else if( std::is_same<T, short>::value ) type= "DevShort";
-			else if(std::is_same<T, int>::value) type= "DevLong";
-			else if(std::is_same<T, long int>::value) type= "DevLong64";
-			else if(std::is_same<T, char*>::value) type= "DevString";
-			else if(std::is_same<T, std::string>::value) type= "DevString";
+			if( std::is_same<T, bool>::value || std::is_same<T, std::vector<bool> >::value ) type= "DevBoolean";
+			else if( std::is_same<T, float>::value || std::is_same<T, std::vector<float> >::value  ) type= "DevFloat";
+			else if( std::is_same<T, double>::value || std::is_same<T, std::vector<double> >::value  ) type= "DevDouble";
+			else if( std::is_same<T, short>::value || std::is_same<T, std::vector<short> >::value  ) type= "DevShort";
+			else if(std::is_same<T, int>::value || std::is_same<T, std::vector<int> >::value ) type= "DevLong";
+			else if(std::is_same<T, long int>::value || std::is_same<T, std::vector<long int> >::value ) type= "DevLong64";
+			else if(std::is_same<T, char*>::value || std::is_same<T, std::vector<char*> >::value ) type= "DevString";
+			else if(std::is_same<T, std::string>::value || std::is_same<T, std::vector<std::string> >::value ) type= "DevString";
 			else type= "UNKNOWN";
 		}//close SetTypeCode()
 
@@ -289,7 +296,31 @@ class ArgumentImpl : public Argument {
 		//Tango::CmdArgType type_code;
 		T value;
 		
-};
+};//close ArgumentImpl
+
+
+template <typename T>
+int Argument::GetValue(T& val) {
+	try{
+		auto castThis = dynamic_cast<ArgumentImpl<T>*>(this);
+		val= castThis->value;
+	}
+	catch(std::bad_cast& e){
+		cerr<<"Argument::GetValue(): ERROR: Failed to get argument value (invalid type cast)!"<<endl;
+		return -1;
+	}
+	return 0;		
+}
+
+
+
+typedef ArgumentImpl<double> DoubleArg;
+typedef ArgumentImpl<float> FloatArg;
+typedef ArgumentImpl<int> IntArg;
+typedef ArgumentImpl<long> LongArg;
+typedef ArgumentImpl<bool> BoolArg;
+typedef ArgumentImpl<std::string> StringArg;
+
 
 
 
