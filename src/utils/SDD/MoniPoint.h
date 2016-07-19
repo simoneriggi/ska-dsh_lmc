@@ -19,8 +19,84 @@
 namespace SDD_ns
 {
 
+class DeviceAttr {
+	public:
+		virtual ~DeviceAttr() {}
+	public:
+		virtual Tango::Attr* GetAttr() const = 0;
+		virtual void SetAttr(Tango::Attr* a) = 0;
+		virtual void SetSubscriptionEndpoint(std::string endpoint) = 0;
+		virtual void SetSubscriptionAttr(std::string subattrname) = 0;
+		virtual bool IsPolled() const = 0;
+		virtual void SetPolled(bool) = 0;
+		virtual bool HasSubscriptionPoint() const = 0;
+		virtual void SetHasSubscriptionPoint(bool) = 0;
+		virtual std::string GetSubscriptionEndPoint() const = 0;
+		virtual std::string GetSubscriptionAttrName() const = 0;
+};
 
-class MoniPoint{
+
+
+template <typename T>
+class DeviceAttrImpl : public DeviceAttr {
+	
+	typedef Tango::MultiAttrProp<T> MultiProp;
+	
+	public:
+		DeviceAttrImpl(){
+			subscribe_endpoint= "";
+			subscribe_attr= "";
+			isPolled= false;
+			hasSubscriptionPoint= false;
+		};
+		DeviceAttrImpl(Tango::Attr* a,MultiProp* p) 
+			: attr(a), prop(p)
+		{
+			subscribe_endpoint= "";
+			subscribe_attr= "";
+			isPolled= false;
+			hasSubscriptionPoint= false;
+		}
+		
+		virtual ~DeviceAttrImpl(){
+			if(attr){
+				delete attr;
+				attr= 0;
+			}
+			if(prop){
+				delete prop;
+				prop= 0;
+			}
+		};
+
+		
+	public:
+		Tango::Attr* GetAttr() const {return attr;} 
+		MultiProp* GetProp() const {return prop;}
+
+		virtual void SetAttr(Tango::Attr* aAttr){attr=aAttr;}
+		virtual void SetProp(MultiProp* aProp){prop=aProp;}
+		virtual void SetSubscriptionEndpoint(std::string endpoint){subscribe_endpoint=endpoint;}
+		virtual void SetSubscriptionAttr(std::string subattrname){subscribe_attr=subattrname;}
+		bool IsPolled() const {return isPolled;}
+		void SetPolled(bool value){isPolled=value;}
+		bool HasSubscriptionPoint() const {return hasSubscriptionPoint;}
+		void SetHasSubscriptionPoint(bool value){hasSubscriptionPoint=value;}
+		std::string GetSubscriptionEndPoint() const {return subscribe_endpoint;}
+		std::string GetSubscriptionAttrName() const {return subscribe_attr;}
+
+	public:
+		Tango::Attr* attr;
+		MultiProp* prop;
+		bool hasSubscriptionPoint;
+		std::string subscribe_endpoint;
+		std::string subscribe_attr;
+		bool isPolled;		
+
+};//close DeviceAttr
+
+
+class MoniPoint {
    	
 	public:
 
@@ -65,6 +141,7 @@ class MoniPoint{
 				return 0;				
 			}
 
+		/*
 		template<typename T>
 			T getValueFromString(std::string input){
 				T value;
@@ -73,7 +150,7 @@ class MoniPoint{
 				sstream>>value;
 				return value;
 			}
-	
+		*/
 		
 		
 	public:

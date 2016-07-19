@@ -20,6 +20,10 @@ using namespace std;
 namespace SDD_ns 
 {
 
+SDD::SDD(){
+
+}
+
 SDD::SDD(std::string filename) 
 	: fFileName(filename)
 {

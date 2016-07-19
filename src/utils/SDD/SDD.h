@@ -25,6 +25,7 @@ namespace SDD_ns
 
 		public:
 		
+			SDD();
 			// The class needs to be default constructible when you want to convert from msgpack::object to your_class                 
     	SDD(std::string filename);
 			~SDD();
